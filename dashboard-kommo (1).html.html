@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oasis Perfumes — CRM</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dim: #8B6914;
+    --bg: #080808;
+    --surface: #111111;
+    --surface2: #191919;
+    --border: rgba(201,168,76,0.15);
+    --border-hover: rgba(201,168,76,0.4);
+    --text: #F5F0E8;
+    --text-muted: rgba(245,240,232,0.45);
+    --text-dim: rgba(245,240,232,0.25);
+    --green: #4CAF7A;
+    --red: #E05555;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events:none;
+    z-index:0;
+    opacity:0.4;
+  }
+
+  /* Header */
+  header {
+    position: relative;
+    z-index:10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,8,8,0.95);
+    backdrop-filter: blur(12px);
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--text); font-weight: 300; }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity:1; transform: scale(1); }
+    50% { opacity:0.4; transform: scale(0.8); }
+  }
+  .last-update {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    position: relative;
+    z-index:10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.875rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,10,0.9);
+  }
+  .filter-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-right: 4px;
+  }
+  .filter-btn {
+    padding: 5px 14px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .filter-btn:hover { border-color: var(--border-hover); color: var(--text); }
+  .filter-btn.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.08);
+  }
+  .filter-sep {
+    width: 1px; height: 16px;
+    background: var(--border);
+    margin: 0 8px;
+  }
+  .embudo-btn {
+    padding: 5px 14px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .embudo-btn:hover { border-color: var(--border-hover); color: var(--text); }
+  .embudo-btn.active {
+    border-color: var(--gold-dim);
+    color: var(--gold-light);
+    background: rgba(201,168,76,0.06);
+  }
+
+  /* Main grid */
+  main {
+    position: relative;
+    z-index:5;
+    padding: 2rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* KPI row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .kpi-card::before {
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity:0;
+    transition: opacity 0.3s;
+  }
+  .kpi-card:hover { border-color: var(--border-hover); }
+  .kpi-card:hover::before { opacity:1; }
+  .kpi-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+  }
+  .kpi-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.8rem;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .kpi-delta {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .delta-up { color: var(--green); }
+  .delta-down { color: var(--red); }
+  .delta-neutral { color: var(--text-dim); }
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* Chart grid */
+  .chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+  }
+  .chart-row-2 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: var(--border-hover); }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .card-title {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .card-accent {
+    width: 20px; height: 1px;
+    background: var(--gold);
+    margin-top: 6px;
+  }
+
+  /* Table */
+  .leads-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .leads-table th {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 0 0 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  .leads-table td {
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(201,168,76,0.06);
+    color: var(--text-muted);
+    vertical-align: middle;
+  }
+  .leads-table tr:last-child td { border-bottom: none; }
+  .leads-table tr:hover td { color: var(--text); }
+  .lead-name { color: var(--text) !important; font-weight: 500; }
+  .etapa-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 1px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+  .badge-principal { border-color: rgba(56,130,221,0.4); color: #85B7EB; background: rgba(56,130,221,0.06); }
+  .badge-filtro { border-color: rgba(76,175,122,0.4); color: #7DD4A0; background: rgba(76,175,122,0.06); }
+  .badge-estimate { border-color: rgba(201,168,76,0.4); color: var(--gold-light); background: rgba(201,168,76,0.06); }
+
+  /* Empty state */
+  .empty { color: var(--text-dim); font-size: 12px; text-align: center; padding: 2rem 0; }
+
+  /* Funnel */
+  .funnel-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .funnel-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: opacity 0.2s;
+  }
+  .funnel-item:hover { opacity: 0.8; }
+  .funnel-label { font-size: 11px; color: var(--text-muted); width: 110px; flex-shrink:0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .funnel-bar-wrap { flex: 1; height: 22px; background: var(--surface2); border-radius: 1px; overflow: hidden; }
+  .funnel-bar { height: 100%; border-radius: 1px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 500; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+  .funnel-pct { font-size: 11px; color: var(--text-dim); width: 36px; text-align: right; flex-shrink:0; }
+
+  /* Loading */
+  .loading { color: var(--text-dim); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+  .kpi-card, .card { animation: fadeIn 0.5s ease both; }
+  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+  .kpi-card:nth-child(2) { animation-delay: 0.1s; }
+  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+  .kpi-card:nth-child(4) { animation-delay: 0.2s; }
+
+  /* Login */
+  .login-overlay {
+    position: fixed; inset: 0; background: var(--bg);
+    z-index: 9999; display: flex; align-items: center;
+    justify-content: center; flex-direction: column;
+  }
+  .login-box {
+    width: 360px; border: 1px solid var(--border);
+    padding: 2.5rem; background: var(--surface);
+    animation: fadeIn 0.5s ease;
+  }
+  .login-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem; font-weight: 400;
+    letter-spacing: 0.2em; color: var(--gold);
+    text-transform: uppercase; text-align: center;
+    margin-bottom: 0.4rem;
+  }
+  .login-sub {
+    font-size: 10px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--text-dim);
+    text-align: center; margin-bottom: 2rem;
+  }
+  .login-line { width: 40px; height: 1px; background: var(--gold-dim); margin: 0 auto 1.5rem; }
+  .login-field { margin-bottom: 1rem; }
+  .login-label {
+    font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-dim);
+    display: block; margin-bottom: 6px;
+  }
+  .login-input {
+    width: 100%; background: var(--bg);
+    border: 1px solid var(--border); color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    padding: 10px 14px; outline: none;
+    transition: border-color 0.2s; border-radius: 0;
+  }
+  .login-input:focus { border-color: var(--gold-dim); }
+  .login-btn {
+    width: 100%; padding: 11px; background: transparent;
+    border: 1px solid var(--gold); color: var(--gold);
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    cursor: pointer; margin-top: 0.5rem; transition: all 0.2s;
+  }
+  .login-btn:hover { background: rgba(201,168,76,0.08); }
+  .login-error {
+    font-size: 11px; color: var(--red);
+    text-align: center; margin-top: 0.75rem;
+    min-height: 16px; letter-spacing: 0.05em;
+  }
+
+</style>
+</head>
+<body>
+
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">Oasis Perfumes</div>
+    <div class="login-sub">CRM — Acceso restringido</div>
+    <div class="login-line"></div>
+    <div class="login-field">
+      <label class="login-label">Usuario</label>
+      <input class="login-input" type="text" id="loginUser" placeholder="Usuario" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Contraseña</label>
+      <input class="login-input" type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">Oasis <span>Perfumes</span> &mdash; CRM</div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>En vivo</div>
+    <div class="last-update" id="lastUpdate">Cargando...</div>
+  </div>
+</header>
+
+<div class="filter-bar">
+  <span class="filter-label">Período</span>
+  <button class="filter-btn" onclick="setPerido('hoy')">Hoy</button>
+  <button class="filter-btn" onclick="setPerido('semana')">Esta semana</button>
+  <button class="filter-btn active" onclick="setPerido('mes')">Este mes</button>
+  <button class="filter-btn" onclick="setPerido('todo')">Total</button>
+  <div class="filter-sep"></div>
+  <span class="filter-label">Embudo</span>
+  <button class="embudo-btn active" onclick="setEmbudo(null)">Todos</button>
+  <button class="embudo-btn" onclick="setEmbudo('principal')">Principal</button>
+  <button class="embudo-btn" onclick="setEmbudo('filtro-mayor')">Filtro Mayor</button>
+  <button class="embudo-btn" onclick="setEmbudo('estimate-cierre')">Estimate</button>
+</div>
+
+<main>
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Total leads</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-delta delta-neutral" id="kpi-total-sub">período seleccionado</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Esta semana</div>
+      <div class="kpi-value" id="kpi-semana">—</div>
+      <div class="kpi-delta" id="kpi-semana-delta">vs semana anterior</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Embudo líder</div>
+      <div class="kpi-value" id="kpi-embudo-val" style="font-size:1.8rem; padding-top:0.4rem;">—</div>
+      <div class="kpi-sub" id="kpi-embudo-sub">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Etapa más activa</div>
+      <div class="kpi-value" id="kpi-etapa-val" style="font-size:1.8rem; padding-top:0.4rem;">—</div>
+      <div class="kpi-sub" id="kpi-etapa-sub">—</div>
+    </div>
+  </div>
+
+  <!-- Charts row 1 -->
+  <div class="chart-row">
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Por embudo</div><div class="card-accent"></div></div>
+      </div>
+      <div style="position:relative;height:180px;">
+        <canvas id="chartEmbudo" role="img" aria-label="Leads por embudo"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Por fuente</div><div class="card-accent"></div></div>
+      </div>
+      <div style="position:relative;height:180px;">
+        <canvas id="chartFuente" role="img" aria-label="Leads por fuente"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Por etapa</div><div class="card-accent"></div></div>
+      </div>
+      <div class="funnel-wrap" id="funnelWrap">
+        <div class="loading">Cargando...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts row 2 -->
+  <div class="chart-row-2">
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Tendencia — últimos 30 días</div><div class="card-accent"></div></div>
+      </div>
+      <div style="position:relative;height:160px;">
+        <canvas id="chartTendencia" role="img" aria-label="Tendencia de leads por día"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Últimos registros</div><div class="card-accent"></div></div>
+      </div>
+      <table class="leads-table">
+        <thead>
+          <tr>
+            <th>Lead</th>
+            <th>Etapa</th>
+            <th>Hace</th>
+          </tr>
+        </thead>
+        <tbody id="leadsBody">
+          <tr><td colspan="3" class="empty">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+// ============================================================
+// CONFIG — reemplaza con tus credenciales de Supabase
+// ============================================================
+const SUPABASE_URL = 'https://smufcsbhfzmauwngaglb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWZjc2JoZnptYXV3bmdhZ2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTE4NTMsImV4cCI6MjA3NDU2Nzg1M30.ZNLlyErkDOzI3c9a0HW5CSf5Dy334eBbTW8DFkwyt6Q';
+// ============================================================
+
+let allData = [];
+let activePeriodo = 'mes';
+let activeEmbudo = null;
+let chartEmbudo, chartFuente, chartTendencia;
+
+const GOLD = '#C9A84C';
+const GOLD_LIGHT = '#E8C97A';
+const COLORS = ['#C9A84C','#85B7EB','#7DD4A0','#E8A87C','#B8A0DC','#E8C97A','#F09595','#9FE1CB'];
+
+async function fetchData() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/kommo_leads_eventos?select=*&order=counted_at.desc&limit=2000`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    }
+  });
+  allData = await res.json();
+  updateLastUpdate();
+  render();
+}
+
+function updateLastUpdate() {
+  const now = new Date();
+  now.setHours(now.getHours() - 5);
+  document.getElementById('lastUpdate').textContent =
+    'Actualizado ' + now.toISOString().replace('T',' ').substring(0,16) + ' COL';
+}
+
+function getFiltered() {
+  let rows = [...allData];
+  const now = new Date();
+  now.setHours(now.getHours() - 5);
+  const todayStr = now.toISOString().split('T')[0];
+
+  if (activePeriodo === 'hoy') {
+    rows = rows.filter(r => r.counted_at && r.counted_at.substring(0,10) === todayStr);
+  } else if (activePeriodo === 'semana') {
+    const dow = now.getDay();
+    const diff = dow === 0 ? -6 : 1 - dow;
+    const lun = new Date(now);
+    lun.setDate(now.getDate() + diff);
+    const lunStr = lun.toISOString().split('T')[0];
+    rows = rows.filter(r => r.counted_at && r.counted_at.substring(0,10) >= lunStr);
+  } else if (activePeriodo === 'mes') {
+    const primerDia = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-01';
+    rows = rows.filter(r => r.counted_at && r.counted_at.substring(0,10) >= primerDia);
+  }
+
+  if (activeEmbudo) {
+    rows = rows.filter(r => r.embudo === activeEmbudo);
+  }
+  return rows;
+}
+
+function getSemanaAnterior() {
+  const now = new Date();
+  now.setHours(now.getHours() - 5);
+  const dow = now.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  const lun = new Date(now); lun.setDate(now.getDate() + diff);
+  const lunStr = lun.toISOString().split('T')[0];
+  const lunAnt = new Date(lun); lunAnt.setDate(lun.getDate() - 7);
+  const lunAntStr = lunAnt.toISOString().split('T')[0];
+  const semActual = allData.filter(r => r.counted_at && r.counted_at.substring(0,10) >= lunStr).length;
+  const semAnt = allData.filter(r => r.counted_at && r.counted_at.substring(0,10) >= lunAntStr && r.counted_at.substring(0,10) < lunStr).length;
+  return { semActual, semAnt };
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '—';
+  const now = new Date();
+  const then = new Date(dateStr);
+  const diff = Math.floor((now - then) / 60000);
+  if (diff < 1) return 'ahora';
+  if (diff < 60) return diff + 'm';
+  if (diff < 1440) return Math.floor(diff/60) + 'h';
+  return Math.floor(diff/1440) + 'd';
+}
+
+function badgeClass(embudo) {
+  if (embudo === 'principal') return 'badge-principal';
+  if (embudo === 'filtro-mayor') return 'badge-filtro';
+  return 'badge-estimate';
+}
+
+const ETAPA_NOMBRES = {
+  contacto_inicial: 'Contacto',
+  leads_entrantes: 'Entrante',
+  enlace_showroom: 'Showroom',
+  aprobar_cliente: 'Aprobar',
+  cliente_validado: 'Validado',
+  crear_estimate: 'Estimate'
+};
+
+function render() {
+  const rows = getFiltered();
+
+  // KPI Total
+  document.getElementById('kpi-total').textContent = rows.length;
+  const periodoLabels = { hoy:'hoy', semana:'esta semana', mes:'este mes', todo:'acumulado' };
+  document.getElementById('kpi-total-sub').textContent = periodoLabels[activePeriodo] || '';
+
+  // KPI Semana
+  const { semActual, semAnt } = getSemanaAnterior();
+  document.getElementById('kpi-semana').textContent = semActual;
+  const deltaEl = document.getElementById('kpi-semana-delta');
+  if (semAnt === 0) {
+    deltaEl.textContent = 'sin datos semana anterior';
+    deltaEl.className = 'kpi-delta delta-neutral';
+  } else {
+    const pct = Math.round(((semActual - semAnt) / semAnt) * 100);
+    if (pct >= 0) {
+      deltaEl.innerHTML = '&#9650; ' + pct + '% vs semana anterior';
+      deltaEl.className = 'kpi-delta delta-up';
+    } else {
+      deltaEl.innerHTML = '&#9660; ' + Math.abs(pct) + '% vs semana anterior';
+      deltaEl.className = 'kpi-delta delta-down';
+    }
+  }
+
+  // KPI Embudo líder
+  const embudoCount = {};
+  rows.forEach(r => { embudoCount[r.embudo] = (embudoCount[r.embudo]||0) + 1; });
+  const topEmbudo = Object.entries(embudoCount).sort((a,b)=>b[1]-a[1])[0];
+  if (topEmbudo) {
+    const nombres = { principal:'Principal', 'filtro-mayor':'Filtro Mayor', 'estimate-cierre':'Estimate' };
+    document.getElementById('kpi-embudo-val').textContent = nombres[topEmbudo[0]] || topEmbudo[0];
+    document.getElementById('kpi-embudo-sub').textContent = topEmbudo[1] + ' leads';
+  }
+
+  // KPI Etapa más activa
+  const etapaCount = {};
+  rows.forEach(r => { etapaCount[r.etapa] = (etapaCount[r.etapa]||0) + 1; });
+  const topEtapa = Object.entries(etapaCount).sort((a,b)=>b[1]-a[1])[0];
+  if (topEtapa) {
+    document.getElementById('kpi-etapa-val').textContent = ETAPA_NOMBRES[topEtapa[0]] || topEtapa[0];
+    document.getElementById('kpi-etapa-sub').textContent = topEtapa[1] + ' leads';
+  }
+
+  // Chart Embudo
+  const embudoLabels = Object.keys(embudoCount);
+  const embudoVals = embudoLabels.map(k => embudoCount[k]);
+  const embudoNombres = { principal:'Principal', 'filtro-mayor':'Filtro Mayor', 'estimate-cierre':'Estimate' };
+  if (chartEmbudo) chartEmbudo.destroy();
+  chartEmbudo = new Chart(document.getElementById('chartEmbudo'), {
+    type: 'bar',
+    data: {
+      labels: embudoLabels.map(k => embudoNombres[k] || k),
+      datasets: [{ data: embudoVals, backgroundColor: COLORS.slice(0, embudoLabels.length), borderRadius: 2, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#666', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#555', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      },
+      onClick: (e, els) => {
+        if (els.length) {
+          const key = embudoLabels[els[0].index];
+          setEmbudo(activeEmbudo === key ? null : key);
+        }
+      }
+    }
+  });
+
+  // Chart Fuente
+  const fuenteCount = {};
+  rows.forEach(r => {
+    let tag = (r.tags || '').trim();
+    if (!tag) tag = 'Sin tag';
+    else {
+      tag = tag.split(',')[0].trim();
+      if (tag.length > 18) tag = tag.substring(0,16) + '…';
+    }
+    fuenteCount[tag] = (fuenteCount[tag]||0) + 1;
+  });
+  const fuenteEntries = Object.entries(fuenteCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  if (chartFuente) chartFuente.destroy();
+  chartFuente = new Chart(document.getElementById('chartFuente'), {
+    type: 'doughnut',
+    data: {
+      labels: fuenteEntries.map(e=>e[0]),
+      datasets: [{ data: fuenteEntries.map(e=>e[1]), backgroundColor: COLORS, borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#888', font: { size: 10 }, boxWidth: 8, padding: 10, usePointStyle: true }
+        }
+      }
+    }
+  });
+
+  // Funnel etapas
+  const etapaEntries = Object.entries(etapaCount).sort((a,b)=>b[1]-a[1]);
+  const maxEtapa = etapaEntries[0] ? etapaEntries[0][1] : 1;
+  const funnelHTML = etapaEntries.map((e, i) => {
+    const pct = Math.round((e[1] / maxEtapa) * 100);
+    const nombre = ETAPA_NOMBRES[e[0]] || e[0];
+    return `<div class="funnel-item">
+      <span class="funnel-label">${nombre}</span>
+      <div class="funnel-bar-wrap">
+        <div class="funnel-bar" style="width:${pct}%;background:${COLORS[i % COLORS.length]}22;color:${COLORS[i % COLORS.length]}">
+          ${e[1]}
+        </div>
+      </div>
+      <span class="funnel-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+  document.getElementById('funnelWrap').innerHTML = funnelHTML || '<div class="empty">Sin datos</div>';
+
+  // Tendencia 30 días
+  const dias = {};
+  const now2 = new Date(); now2.setHours(now2.getHours()-5);
+  for (let i=29; i>=0; i--) {
+    const d = new Date(now2); d.setDate(now2.getDate()-i);
+    dias[d.toISOString().split('T')[0]] = 0;
+  }
+  const hace30 = new Date(now2); hace30.setDate(now2.getDate()-30);
+  const hace30Str = hace30.toISOString().split('T')[0];
+  allData.filter(r => activeEmbudo ? r.embudo === activeEmbudo : true)
+    .filter(r => r.counted_at && r.counted_at.substring(0,10) >= hace30Str)
+    .forEach(r => { const d = r.counted_at.substring(0,10); if (dias[d] !== undefined) dias[d]++; });
+  const diasKeys = Object.keys(dias);
+  const diasVals = Object.values(dias);
+  if (chartTendencia) chartTendencia.destroy();
+  chartTendencia = new Chart(document.getElementById('chartTendencia'), {
+    type: 'line',
+    data: {
+      labels: diasKeys.map(d => { const p = d.split('-'); return p[2]+'/'+p[1]; }),
+      datasets: [{
+        data: diasVals,
+        borderColor: GOLD,
+        backgroundColor: 'rgba(201,168,76,0.06)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: GOLD,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#555', font: { size: 10 }, maxTicksLimit: 10, autoSkip: true }, grid: { display: false } },
+        y: { ticks: { color: '#555', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+
+  // Tabla últimos leads
+  const recientes = [...allData]
+    .filter(r => activeEmbudo ? r.embudo === activeEmbudo : true)
+    .slice(0, 8);
+  const tbody = document.getElementById('leadsBody');
+  if (recientes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Sin registros</td></tr>';
+  } else {
+    tbody.innerHTML = recientes.map(r => `
+      <tr>
+        <td class="lead-name">${r.lead_name || 'Sin nombre'}</td>
+        <td><span class="etapa-badge ${badgeClass(r.embudo)}">${ETAPA_NOMBRES[r.etapa] || r.etapa}</span></td>
+        <td>${timeAgo(r.counted_at)}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+function setPerido(p) {
+  activePeriodo = p;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  render();
+}
+
+function setEmbudo(e) {
+  activeEmbudo = e;
+  document.querySelectorAll('.embudo-btn').forEach(b => b.classList.remove('active'));
+  if (!e) document.querySelectorAll('.embudo-btn')[0].classList.add('active');
+  else {
+    const map = { principal:1, 'filtro-mayor':2, 'estimate-cierre':3 };
+    document.querySelectorAll('.embudo-btn')[map[e]].classList.add('active');
+  }
+  render();
+}
+
+// Auto-refresh cada 3 minutos
+setInterval(() => { if(sessionStorage.getItem(SESSION_KEY)==="ok") fetchData(); }, 180000);
+
+
+// ============================================================
+// AUTH
+// ============================================================
+const AUTH_USER = 'Kommo-dashboard';
+const AUTH_PASS = 'Acceso_Oasisn8n';
+const SESSION_KEY = 'oasis_crm_auth';
+
+function checkSession() {
+  const s = sessionStorage.getItem(SESSION_KEY);
+  if (s === 'ok') {
+    document.getElementById('loginOverlay').style.display = 'none';
+    fetchData();
+  }
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const err = document.getElementById('loginError');
+  if (u === AUTH_USER && p === AUTH_PASS) {
+    sessionStorage.setItem(SESSION_KEY, 'ok');
+    document.getElementById('loginOverlay').style.display = 'none';
+    fetchData();
+  } else {
+    err.textContent = 'Usuario o contraseña incorrectos.';
+    document.getElementById('loginPass').value = '';
+    setTimeout(() => err.textContent = '', 3000);
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('loginOverlay').style.display !== 'none') {
+    doLogin();
+  }
+});
+
+// Start with auth check instead of fetchData
+checkSession();
+
+</script>
+</body>
+</html>
