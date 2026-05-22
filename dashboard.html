@@ -6,7 +6,6 @@
 <title>Oasis Perfumes · CRM Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
 :root{
   --bg:#080812;--surface:#0e0e1a;--surface2:#13131f;--border:rgba(255,255,255,0.07);
@@ -687,15 +686,50 @@ function renderTrend(){
 // ═══════════════════════════════════════════════════════════════
 function renderTags(f){
   dc('tg');
-  // fuente solo características (excluir canales)
-  const excl=['INSTAGRAM','TIKTOK','WEBSITE'];
-  const counts={};
-  f.forEach(r=>{const ft=r.fuente;if(!ft||excl.includes(ft))return;if(!counts[ft])counts[ft]=new Set();counts[ft].add(r.lead_id);});
-  const sorted=Object.entries(counts).map(([k,v])=>({l:k,n:v.size})).sort((a,b)=>b.n-a.n).slice(0,12);
-  const ctx=$('ch-tags').getContext('2d');
-  S.charts.tg=new Chart(ctx,{type:'bar',data:{labels:sorted.map(i=>i.l),datasets:[{data:sorted.map(i=>i.n),backgroundColor:sorted.map((_,i)=>PAL[i%PAL.length]+'BB'),borderColor:sorted.map((_,i)=>PAL[i%PAL.length]),borderWidth:1,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const t=sorted.reduce((s,i)=>s+i.n,0);return` ${c.raw} leads (${(c.raw/t*100).toFixed(1)})`;}}},datalabels:{anchor:'end',align:'right',color:'#555',font:{size:9},formatter:v=>v}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#555',font:{size:8}},beginAtZero:true},y:{grid:{display:false},ticks:{color:'#aaa',font:{size:9}}}},onClick:(e,els)=>{if(!els.length)return;xf('tag',sorted[els[0].index].l);}}},plugins:[ChartDataLabels]);
+  var excl=['INSTAGRAM','TIKTOK','WEBSITE'];
+  var counts={};
+  f.forEach(function(r){
+    var ft=r.fuente;
+    if(!ft||excl.indexOf(ft)>=0)return;
+    if(!counts[ft])counts[ft]=new Set();
+    counts[ft].add(r.lead_id);
+  });
+  var sorted=Object.entries(counts).map(function(e){
+    return{l:e[0],n:e[1].size};
+  }).sort(function(a,b){return b.n-a.n;}).slice(0,12);
+  if(!sorted.length)return;
+  var ctx=$('ch-tags').getContext('2d');
+  S.charts.tg=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:sorted.map(function(i){return i.l;}),
+      datasets:[{
+        data:sorted.map(function(i){return i.n;}),
+        backgroundColor:sorted.map(function(_,i){return PAL[i%PAL.length]+'BB';}),
+        borderColor:sorted.map(function(_,i){return PAL[i%PAL.length];}),
+        borderWidth:1,borderRadius:4
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){
+          var t=sorted.reduce(function(s,i){return s+i.n;},0);
+          return ' '+c.raw+' leads ('+(c.raw/t*100).toFixed(1)+'%)';
+        }}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#555',font:{size:8}},beginAtZero:true},
+        y:{grid:{display:false},ticks:{color:'#aaa',font:{size:9}}}
+      },
+      onClick:function(e,els){
+        if(!els.length)return;
+        if(sorted[els[0].index])xf('tag',sorted[els[0].index].l);
+      }
+    }
+  });
 }
-
 // ═══════════════════════════════════════════════════════════════
 // HEATMAP 7×24
 // ═══════════════════════════════════════════════════════════════
@@ -757,11 +791,45 @@ function renderEmbDia(){
 // LEADS POR EMBUDO
 // ═══════════════════════════════════════════════════════════════
 function renderHbar(f){
-  dc('hb');const embs=Object.keys(EL),counts={};
-  f.forEach(r=>{if(!counts[r.embudo])counts[r.embudo]=new Set();counts[r.embudo].add(r.lead_id);});
-  const sorted=embs.map(e=>({l:EL[e],n:counts[e]?.size||0,c:EC[e]||'#888'})).sort((a,b)=>b.n-a.n);
+  dc('hb');
+  const embs=Object.keys(EL);
+  const counts={};
+  f.forEach(function(r){
+    if(!counts[r.embudo])counts[r.embudo]=new Set();
+    counts[r.embudo].add(r.lead_id);
+  });
+  const sorted=embs.map(function(e){
+    return {l:EL[e],n:counts[e]?counts[e].size:0,c:EC[e]||'#888',k:e};
+  }).sort(function(a,b){return b.n-a.n;});
   const ctx=$('ch-hbar').getContext('2d');
-  S.charts.hb=new Chart(ctx,{type:'bar',data:{labels:sorted.map(i=>i.l),datasets:[{data:sorted.map(i=>i.n),backgroundColor:sorted.map(i=>i.c+'55'),borderColor:sorted.map(i=>i.c),borderWidth:2,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toLocaleString()} leads únicos`}},datalabels:{anchor:'end',align:'right',color:'#555',font:{size:9},formatter:v=>v.toLocaleString()}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#555',font:{size:8}},beginAtZero:true},y:{grid:{display:false},ticks:{color:'#aaa',font:{size:10}}}}},onClick:(e,els)=>{if(!els.length)return;xf('embudo',embs[sorted[els[0].index]?Object.keys(EL).find(k=>EL[k]===sorted[els[0].index].l):0]);}}},plugins:[ChartDataLabels]);
+  S.charts.hb=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:sorted.map(function(i){return i.l;}),
+      datasets:[{
+        data:sorted.map(function(i){return i.n;}),
+        backgroundColor:sorted.map(function(i){return i.c+'55';}),
+        borderColor:sorted.map(function(i){return i.c;}),
+        borderWidth:2,borderRadius:6,borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){return ' '+c.raw.toLocaleString()+' leads únicos';}}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#555',font:{size:8}},beginAtZero:true},
+        y:{grid:{display:false},ticks:{color:'#aaa',font:{size:10}}}
+      },
+      onClick:function(e,els){
+        if(!els.length)return;
+        var s=sorted[els[0].index];
+        if(s)xf('embudo',s.k);
+      }
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
