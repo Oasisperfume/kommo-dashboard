@@ -450,6 +450,7 @@ const S={
 // UTILS — definir $ primero para que esté disponible en todo
 // ═══════════════════════════════════════════════════════════════
 const $=id=>document.getElementById(id);
+const ldp=t=>$('ldp').textContent=t;
 
 function doLogin(){
   const u=$('lu').value.trim();
@@ -477,7 +478,6 @@ if(localStorage.getItem('oas_auth')==='1'){
   $('login-screen').style.display='none';
   startApp();
 }
-const ldp=t=>$('ldp').textContent=t;
 const fmtM=v=>{if(!v||+v===0)return'—';v=+v;if(v>=1e6)return`$${(v/1e6).toFixed(1)}M`;if(v>=1e3)return`$${(v/1e3).toFixed(0)}K`;return`$${v.toFixed(0)}`;};
 const fmtN=v=>{if(v>=1e6)return`${(v/1e6).toFixed(1)}M`;if(v>=1e3)return`${(v/1e3).toFixed(0)}K`;return String(Math.round(v));};
 const fmtDT=s=>{const d=new Date(s);return d.toLocaleString('es-CO',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'America/Bogota'});};
