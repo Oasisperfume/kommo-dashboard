@@ -426,28 +426,37 @@ const S={
 // ═══════════════════════════════════════════════════════════════
 // LOGIN
 // ═══════════════════════════════════════════════════════════════
-function doLogin(){
-  const u=document.getElementById('lu').value.trim();
-  const p=document.getElementById('lp').value;
-  if(u==='Kommo-dashboard'&&p==='Acceso_Oasisn8n'){
-    localStorage.setItem('oas_auth','1');
-    document.getElementById('login-screen').style.display='none';
-    startApp();
-  } else {
-    document.getElementById('lerr').textContent='Usuario o contraseña incorrectos';
-  }
-}
-document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-
-if(localStorage.getItem('oas_auth')==='1'){
-  document.getElementById('login-screen').style.display='none';
-  startApp();
-}
-
 // ═══════════════════════════════════════════════════════════════
-// UTILS
+// UTILS — definir $ primero para que esté disponible en todo
 // ═══════════════════════════════════════════════════════════════
 const $=id=>document.getElementById(id);
+
+function doLogin(){
+  const u=$('lu').value.trim();
+  const p=$('lp').value;
+  if(u==='Kommo-dashboard' && p==='Acceso_Oasisn8n'){
+    localStorage.setItem('oas_auth','1');
+    $('login-screen').style.display='none';
+    startApp();
+  } else {
+    const err=$('lerr');
+    err.textContent='❌ Usuario o contraseña incorrectos';
+    err.style.fontSize='12px';
+    err.style.padding='8px';
+    err.style.background='rgba(248,113,113,0.15)';
+    err.style.borderRadius='6px';
+    err.style.marginTop='8px';
+    $('lu').style.borderColor='var(--red)';
+    $('lp').style.borderColor='var(--red)';
+  }
+}
+$('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+$('lu').addEventListener('input',()=>{$('lerr').textContent='';$('lu').style.borderColor='';$('lp').style.borderColor='';});
+
+if(localStorage.getItem('oas_auth')==='1'){
+  $('login-screen').style.display='none';
+  startApp();
+}
 const ldp=t=>$('ldp').textContent=t;
 const fmtM=v=>{if(!v||+v===0)return'—';v=+v;if(v>=1e6)return`$${(v/1e6).toFixed(1)}M`;if(v>=1e3)return`$${(v/1e3).toFixed(0)}K`;return`$${v.toFixed(0)}`;};
 const fmtN=v=>{if(v>=1e6)return`${(v/1e6).toFixed(1)}M`;if(v>=1e3)return`${(v/1e3).toFixed(0)}K`;return String(Math.round(v));};
