@@ -153,6 +153,19 @@ tbody tr:hover{background:rgba(59,130,246,0.04);}
 
 /* ── TOOLTIP ── */
 .hm-tip{position:fixed;background:rgba(0,0,0,0.9);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:9px;font-weight:600;pointer-events:none;z-index:500;display:none;}
+/* ── CUSTOM SELECT ── */
+.tag-sel{padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:9px;font-family:'Montserrat',sans-serif;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px;min-width:100px;}
+.tag-sel option{background:var(--surface2);color:var(--text);font-family:'Montserrat',sans-serif;}
+.tag-sel:focus{border-color:var(--blue);}
+/* ── DATE RANGE ── */
+.date-range-wrap{display:none;align-items:center;gap:6px;padding:5px 0;}
+.date-range-wrap.show{display:flex;}
+.date-inp{padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:9px;font-family:'Montserrat',sans-serif;outline:none;cursor:pointer;color-scheme:dark;}
+.date-inp:focus{border-color:var(--blue);}
+.date-lbl{font-size:8px;color:var(--muted);font-weight:700;}
+/* Fix KPI grid */
+.kpi-row{grid-auto-rows:auto;}
+
 
 /* ── FOOTER ── */
 .ftr{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:8px;color:var(--muted);font-weight:600;letter-spacing:0.05em;flex-wrap:wrap;gap:6px;}
@@ -201,6 +214,14 @@ tbody tr:hover{background:rgba(59,130,246,0.04);}
       <button class="pill" data-p="30d">30D</button>
       <button class="pill" data-p="90d">90D</button>
       <button class="pill" data-p="all">Todo</button>
+      <button class="pill" data-p="rango">📅 Rango</button>
+    </div>
+    <div class="date-range-wrap" id="date-range">
+      <span class="date-lbl">Desde:</span>
+      <input type="date" class="date-inp" id="d-from">
+      <span class="date-lbl">Hasta:</span>
+      <input type="date" class="date-inp" id="d-to">
+      <button class="pill" id="btn-apply-range" style="background:var(--blue);border-color:var(--blue);color:#fff;">Aplicar</button>
     </div>
     <div class="hdr-right">
       <button class="pill" id="btn-export">📥 CSV</button>
@@ -244,7 +265,7 @@ tbody tr:hover{background:rgba(59,130,246,0.04);}
     <div class="kpi"><div class="kpi-acc" style="background:var(--cyan)"></div>
       <div class="kpi-lbl">Leads Nuevos</div>
       <div class="kpi-val" id="kv-new" style="color:var(--cyan)">—</div>
-      <div class="kpi-txt">etapa entrantes</div>
+      <div class="kpi-txt">etapa entrantes · período</div>
       <div class="kpi-chg flat" id="kc-new">hoy: —</div>
     </div>
     <div class="kpi"><div class="kpi-acc" style="background:var(--indigo)"></div>
@@ -264,8 +285,8 @@ tbody tr:hover{background:rgba(59,130,246,0.04);}
       <div class="pres-row">
         <div class="pres-item"><div class="pres-lbl">⏳ Pendiente</div><div class="pres-val" id="kv-pend" style="color:var(--amber)">—</div></div>
         <div class="pres-item"><div class="pres-lbl">❌ Cancelado</div><div class="pres-val" id="kv-canc" style="color:var(--red)">—</div></div>
-        <div class="pres-item"><div class="pres-lbl">📊 Promedio</div><div class="pres-val" id="kv-prom" style="color:var(--sub)">—</div></div>
-        <div class="pres-item"><div class="pres-lbl">🎯 Meta sem.</div><div class="pres-val" id="kv-meta" style="color:var(--gold)">—%</div></div>
+        <div class="pres-item"><div class="pres-lbl">🎫 Ticket prom.</div><div class="pres-val" id="kv-prom" style="color:var(--sub)">—</div></div>
+        <div class="pres-item"><div class="pres-lbl">🎯 Meta (entrantes)</div><div class="pres-val" id="kv-meta" style="color:var(--gold)">—%</div></div>
       </div>
     </div>
   </div>
@@ -418,7 +439,7 @@ const EST_COL={'crear_estimate':'#3B82F6','estimate_enviado':'#06B6D4','estimate
 // ═══════════════════════════════════════════════════════════════
 const S={
   all:[],charts:{},sparks:{},
-  F:{period:'semana',embudo:null,tag:null,etapa:null},
+  F:{period:'semana',embudo:null,tag:null,etapa:null,from:null,to:null},
   tbl:{page:0,ps:20,q:'',sort:{col:'counted_at',asc:false},data:[]}
 };
 
@@ -483,13 +504,18 @@ function getHoyColUTC(){
   return new Date(hoy.getTime()+5*3600000);
 }
 function getPeriodStart(p){
+  if(p==='rango'&&S.F.from)return new Date(S.F.from+'T00:00:00-05:00');
   const now=new Date();
   if(p==='semana')return getLunesColUTC();
   if(p==='hoy')return getHoyColUTC();
   if(p==='7d'){const d=new Date(now);d.setDate(d.getDate()-7);return d;}
   if(p==='30d'){const d=new Date(now);d.setDate(d.getDate()-30);return d;}
   if(p==='90d'){const d=new Date(now);d.setDate(d.getDate()-90);return d;}
-  return new Date(0); // all
+  return new Date(0);
+}
+function getPeriodEnd(p){
+  if(p==='rango'&&S.F.to)return new Date(S.F.to+'T23:59:59-05:00');
+  return new Date(9999,0,1);
 }
 function getPrevStart(p){
   const s=getPeriodStart(p);
@@ -537,8 +563,10 @@ async function loadAll(){
 // ═══════════════════════════════════════════════════════════════
 function filtered(){
   const start=getPeriodStart(S.F.period);
+  const end=getPeriodEnd(S.F.period);
   return S.all.filter(r=>{
-    if(new Date(r.counted_at)<start)return false;
+    const d=new Date(r.counted_at);
+    if(d<start||d>end)return false;
     if(S.F.embudo&&r.embudo!==S.F.embudo)return false;
     if(S.F.tag&&r.fuente!==S.F.tag)return false;
     if(S.F.etapa&&r.etapa!==S.F.etapa)return false;
@@ -617,16 +645,18 @@ function renderKPIs(f){
   $('kv-canc').textContent=fmtM(canc);
   $('kv-prom').textContent=fmtM(prom);
 
-  // Meta semanal
+  // Meta semanal (basada en leads NUEVOS - entrantes - esta semana)
   const semStart=getLunesColUTC();
-  const semData=S.all.filter(r=>{
+  const entrantesData=S.all.filter(r=>{
     if(new Date(r.counted_at)<semStart)return false;
+    if(r.etapa!=='leads_entrantes')return false;
     if(S.F.embudo&&r.embudo!==S.F.embudo)return false;
     return true;
   });
-  const nSem=uniq(semData);
-  const metaPct=Math.round(nSem/META_SEM*100);
+  const nSemEntrant=uniq(entrantesData);
+  const metaPct=Math.round(nSemEntrant/META_SEM*100);
   $('kv-meta').textContent=`${metaPct}%`;
+  const nSem=nSemEntrant; // para el gauge
 
   // Gauge
   renderGauge(nSem,nPrev);
@@ -650,14 +680,16 @@ function renderSpark(id,data,color){
 // ═══════════════════════════════════════════════════════════════
 function renderGauge(nSem,nPrevSem){
   dc('gauge');
+  // nSem aquí = leads entrantes de la semana
   const pct=Math.min(nSem/META_SEM,1);
   let col='#3B82F6';
   if(pct>=1)col='#10B981';else if(pct>=0.8)col='#C9A84C';else if(pct<0.4)col='#F87171';
   const ctx=$('ch-gauge').getContext('2d');
   S.charts.gauge=new Chart(ctx,{type:'doughnut',data:{datasets:[{data:[nSem,Math.max(0,META_SEM-nSem)],backgroundColor:[col,'rgba(255,255,255,0.04)'],borderWidth:0,cutout:'76%',rotation:-110,circumference:220}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}});
   $('g-pct').textContent=`${Math.round(pct*100)}%`;$('g-pct').style.color=col;
-  $('g-sub').textContent=`${fmtN(nSem)} / ${META_SEM.toLocaleString()} leads esta semana`;
-  const prevSemData=S.all.filter(r=>{const d=new Date(r.counted_at);const ls=getLunesColUTC();const prev=new Date(ls);prev.setDate(prev.getDate()-7);return d>=prev&&d<ls;});
+  $('g-sub').textContent=`${fmtN(nSem)} leads nuevos esta semana`;
+  const ls=getLunesColUTC();const prevLun=new Date(ls);prevLun.setDate(prevLun.getDate()-7);
+  const prevSemData=S.all.filter(r=>{const d=new Date(r.counted_at);return d>=prevLun&&d<ls&&r.etapa==='leads_entrantes';});
   const nPS=uniq(prevSemData);
   $('g-ant').textContent=`sem. anterior: ${fmtN(nPS)} leads (${Math.round(nPS/META_SEM*100)}%)`;
 }
@@ -1018,6 +1050,21 @@ function setupEvents(){
 
   // Sorting tabla
   document.querySelectorAll('thead th[data-c]').forEach(th=>th.addEventListener('click',()=>{const c=th.dataset.c;if(S.tbl.sort.col===c)S.tbl.sort.asc=!S.tbl.sort.asc;else{S.tbl.sort.col=c;S.tbl.sort.asc=false;}S.tbl.page=0;renderTable();}));
+
+  // Rango de fechas
+  $('btn-apply-range').addEventListener('click',()=>{
+    const from=$('d-from').value,to=$('d-to').value;
+    if(!from||!to){alert('Selecciona fecha inicio y fin');return;}
+    S.F.from=from;S.F.to=to;S.F.period='rango';
+    renderBadges();renderAll();
+  });
+
+  // Mostrar/ocultar rango
+  document.querySelectorAll('#period-pills .pill').forEach(btn=>btn.addEventListener('click',()=>{
+    const isRango=btn.dataset.p==='rango';
+    $('date-range').classList.toggle('show',isRango);
+    if(!isRango){S.F.from=null;S.F.to=null;}
+  },{capture:true}));
 }
 
 // ═══════════════════════════════════════════════════════════════
