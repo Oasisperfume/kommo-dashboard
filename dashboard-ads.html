@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oasis Perfumes · Publicidad</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#080812;--surface:#0e0e1a;--surface2:#13131f;--border:rgba(255,255,255,0.07);
+  --blue:#3B82F6;--indigo:#6366F1;--gold:#C9A84C;--green:#10B981;
+  --violet:#A78BFA;--rose:#F472B6;--amber:#F59E0B;--red:#F87171;--cyan:#06B6D4;
+  --text:#F0F0F8;--sub:rgba(240,240,248,0.55);--muted:rgba(240,240,248,0.3);
+  --r:12px;--gap:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:360px;text-align:center;}
+.login-logo{font-size:22px;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
+.login-sub{font-size:9px;color:var(--muted);letter-spacing:0.25em;text-transform:uppercase;margin-bottom:28px;}
+.login-input{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:12px;outline:none;margin-bottom:10px;transition:border-color 0.2s;}
+.login-input:focus{border-color:var(--gold);}
+.login-btn{width:100%;padding:11px;background:var(--gold);border:none;border-radius:8px;color:#000;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:opacity 0.2s;margin-top:4px;}
+.login-btn:hover{opacity:0.88;}
+.login-err{color:var(--red);font-size:10px;margin-top:8px;min-height:14px;}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--bg);z-index:1000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.ld-ring{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-txt{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.1em;}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(8,8,18,0.97);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);padding:10px 20px;}
+.hdr-r1{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.hdr-brand{display:flex;flex-direction:column;}
+.hdr-name{font-size:15px;font-weight:900;letter-spacing:0.07em;text-transform:uppercase;}
+.hdr-sub2{font-size:7px;color:var(--muted);letter-spacing:0.3em;text-transform:uppercase;}
+.hdr-badge{font-size:8px;font-weight:700;padding:2px 8px;border-radius:100px;background:rgba(201,168,76,0.15);border:1px solid var(--gold);color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;}
+.sep{width:1px;height:24px;background:var(--border);}
+.pill-row{display:flex;gap:4px;flex-wrap:wrap;}
+.pill{padding:4px 10px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--sub);font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;cursor:pointer;transition:all 0.18s;letter-spacing:0.05em;text-transform:uppercase;}
+.pill:hover{border-color:rgba(255,255,255,0.2);color:var(--text);}
+.pill.on{background:var(--gold);border-color:var(--gold);color:#000;box-shadow:0 0 12px rgba(201,168,76,0.3);}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.btn-back{padding:5px 12px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--sub);font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;cursor:pointer;transition:all 0.18s;letter-spacing:0.05em;}
+.btn-back:hover{border-color:rgba(255,255,255,0.3);color:var(--text);}
+.btn-refresh-meta{padding:5px 14px;border-radius:100px;border:1px solid rgba(201,168,76,0.4);background:rgba(201,168,76,0.1);color:var(--gold);font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;cursor:pointer;transition:all 0.18s;letter-spacing:0.05em;}
+.btn-refresh-meta:hover{background:rgba(201,168,76,0.2);}
+.btn-refresh-meta:disabled{opacity:0.5;cursor:not-allowed;}
+.dot-live{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.sync-info{font-size:9px;color:var(--muted);font-weight:600;}
+
+/* SUB-TABS */
+.subtab-bar{display:flex;gap:4px;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--surface);}
+.stab{padding:5px 14px;border-radius:8px;border:none;background:transparent;color:var(--sub);font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;cursor:pointer;transition:all 0.18s;letter-spacing:0.08em;text-transform:uppercase;}
+.stab:hover{color:var(--text);background:rgba(255,255,255,0.05);}
+.stab.on{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);}
+
+/* CONTENT */
+.page{padding:16px 20px;display:flex;flex-direction:column;gap:var(--gap);}
+.tab-pane{display:none;}
+.tab-pane.on{display:flex;flex-direction:column;gap:var(--gap);}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);}
+.kpi-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;}
+.kpi-acc{position:absolute;top:0;left:0;width:3px;height:100%;}
+.kpi-lbl{font-size:8px;font-weight:700;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.kpi-val{font-size:24px;font-weight:900;line-height:1;margin-bottom:4px;}
+.kpi-txt{font-size:9px;color:var(--sub);}
+.kpi-chg{font-size:10px;font-weight:700;margin-top:4px;}
+.kpi-chg.up{color:var(--green);}
+.kpi-chg.down{color:var(--red);}
+.kpi-chg.flat{color:var(--muted);}
+.kpi-note{font-size:7px;color:var(--muted);margin-top:3px;font-style:italic;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+.card-hdr{display:flex;align-items:center;gap:6px;margin-bottom:12px;}
+.card-title{font-size:10px;font-weight:700;color:var(--text);letter-spacing:0.05em;text-transform:uppercase;}
+.card-badge{font-size:7px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:auto;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);}
+canvas{width:100%!important;max-height:240px;}
+
+/* TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:8px;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+thead th{padding:8px 10px;background:var(--surface2);color:var(--muted);font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);}
+thead th:hover{color:var(--text);}
+tbody td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--sub);white-space:nowrap;}
+tbody tr:hover td{background:rgba(255,255,255,0.03);color:var(--text);}
+tbody tr:last-child td{border-bottom:none;}
+.td-num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
+.td-name{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:600;}
+.sort-icon{opacity:0.4;margin-left:3px;font-size:8px;}
+.sort-icon.asc::after{content:'▲';}
+.sort-icon.desc::after{content:'▼';}
+
+/* CTR BADGE */
+.ctr-hi{color:var(--green);font-weight:700;}
+.ctr-mid{color:var(--sub);}
+.ctr-lo{color:var(--red);font-weight:700;}
+
+/* FILTER PILLS */
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.filter-lbl{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.1em;}
+.fpill{padding:3px 9px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--sub);font-family:'Montserrat',sans-serif;font-size:8px;font-weight:700;cursor:pointer;transition:all 0.15s;text-transform:uppercase;}
+.fpill:hover{border-color:rgba(255,255,255,0.2);color:var(--text);}
+.fpill.on{background:rgba(59,130,246,0.15);border-color:var(--blue);color:var(--blue);}
+
+/* TOP CTR BARS */
+.ctr-bar-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);}
+.ctr-bar-row:last-child{border-bottom:none;}
+.ctr-rank{font-size:9px;color:var(--muted);font-weight:700;width:18px;text-align:right;}
+.ctr-name{font-size:9px;color:var(--text);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ctr-bar-wrap{width:140px;height:6px;background:rgba(255,255,255,0.07);border-radius:100px;flex-shrink:0;}
+.ctr-bar-fill{height:100%;border-radius:100px;background:var(--gold);transition:width 0.5s ease;}
+.ctr-pct{font-size:9px;font-weight:700;color:var(--gold);width:36px;text-align:right;}
+.ctr-country{font-size:8px;color:var(--muted);width:60px;text-align:right;}
+
+/* TIKTOK FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-full{grid-column:1/-1;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-lbl{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;}
+.form-lbl span{color:var(--red);}
+.form-inp{padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;outline:none;transition:border-color 0.2s;width:100%;}
+.form-inp:focus{border-color:var(--gold);}
+.form-inp::placeholder{color:var(--muted);}
+.form-sel{padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;outline:none;width:100%;cursor:pointer;}
+.form-sel option{background:var(--surface);}
+.form-textarea{padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:11px;outline:none;resize:vertical;width:100%;min-height:70px;}
+.form-textarea:focus{border-color:var(--gold);}
+.btn-save{padding:10px 24px;background:var(--gold);border:none;border-radius:8px;color:#000;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:opacity 0.2s;letter-spacing:0.05em;}
+.btn-save:hover{opacity:0.88;}
+.btn-save:disabled{opacity:0.5;cursor:not-allowed;}
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 18px;border-radius:10px;font-size:11px;font-weight:700;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.ok{background:rgba(16,185,129,0.15);border:1px solid var(--green);color:var(--green);}
+.toast.err{background:rgba(248,113,113,0.15);border:1px solid var(--red);color:var(--red);}
+.toast.show{opacity:1;}
+
+/* CONVERSION TABLE */
+.conv-row-total{background:rgba(201,168,76,0.07)!important;}
+.conv-row-total td{color:var(--gold)!important;font-weight:700!important;}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:60px 20px;color:var(--muted);}
+.empty-icon{font-size:36px;opacity:0.4;}
+.empty-txt{font-size:11px;font-weight:600;letter-spacing:0.05em;}
+
+/* ROAS NOTE */
+.roas-note{font-size:8px;color:var(--muted);background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:6px 10px;line-height:1.5;}
+
+/* SECTION DIVIDER */
+.sec-lbl{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.15em;padding:4px 0;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Oasis Perfumes</div>
+    <div class="login-sub">Rendimiento Publicitario</div>
+    <input class="login-input" id="lu" type="text" placeholder="Usuario" autocomplete="username">
+    <input class="login-input" id="lp" type="password" placeholder="Contraseña" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-err" id="lerr"></div>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="ld-ring"></div>
+  <div class="ld-txt">CARGANDO DATOS</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-r1">
+      <div class="hdr-brand">
+        <div class="hdr-name">Oasis Perfumes</div>
+        <div class="hdr-sub2">CRM Analytics</div>
+      </div>
+      <span class="hdr-badge">📊 Publicidad</span>
+      <div class="sep"></div>
+      <div class="pill-row" id="period-pills">
+        <button class="pill on" data-p="30d">30D</button>
+        <button class="pill" data-p="7d">7D</button>
+        <button class="pill" data-p="90d">90D</button>
+      </div>
+      <div class="hdr-right">
+        <button class="btn-refresh-meta" id="btn-refresh-meta">🔄 Sync Meta</button>
+        <div class="sep"></div>
+        <div class="dot-live"></div>
+        <span class="sync-info" id="sync-txt">—</span>
+        <div class="sep"></div>
+        <button class="btn-back" onclick="window.location.href='/'">← CRM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUB-TABS -->
+  <div class="subtab-bar">
+    <button class="stab on" data-tab="overview">📈 Overview</button>
+    <button class="stab" data-tab="campanas">🎯 Campañas</button>
+    <button class="stab" data-tab="conversion">💰 Conversión</button>
+    <button class="stab" data-tab="topctr">🏆 Top CTR</button>
+    <button class="stab" data-tab="tiktok">📱 TikTok Manual</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="page">
+
+    <!-- ══════════════════════════════════
+         TAB: OVERVIEW
+    ══════════════════════════════════ -->
+    <div class="tab-pane on" id="tab-overview">
+
+      <!-- KPI row 1: Meta -->
+      <div class="sec-lbl">Meta Ads</div>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-acc" style="background:var(--gold)"></div>
+          <div class="kpi-lbl">Gasto Total Meta</div>
+          <div class="kpi-val" id="ov-spend" style="color:var(--gold)">—</div>
+          <div class="kpi-txt" id="ov-spend-txt">últimos 30 días</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-acc" style="background:var(--green)"></div>
+          <div class="kpi-lbl">ROAS Real (Kommo)</div>
+          <div class="kpi-val" id="ov-roas-real" style="color:var(--green)">—</div>
+          <div class="kpi-txt">Revenue Kommo INSTAGRAM ÷ Gasto</div>
+          <div class="kpi-note">⚠️ Solo leads con canal = INSTAGRAM</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-acc" style="background:var(--blue)"></div>
+          <div class="kpi-lbl">ROAS Meta (atribución)</div>
+          <div class="kpi-val" id="ov-roas-meta" style="color:var(--blue)">—</div>
+          <div class="kpi-txt">purchase_value ÷ spend (ventana 7d clic)</div>
+          <div class="kpi-note">⚠️ Siempre mayor al ROAS Real</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-acc" style="background:var(--violet)"></div>
+          <div class="kpi-lbl">Costo / Lead Meta</div>
+          <div class="kpi-val" id="ov-cpl-meta" style="color:var(--violet)">—</div>
+          <div class="kpi-txt" id="ov-cpl-meta-txt">leads con canal INSTAGRAM</div>
+        </div>
+      </div>
+
+      <!-- KPI row 2: TikTok + Purchases -->
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-acc" style="background:var(--cyan)"></div>
+          <div class="kpi-lbl">Gasto Total TikTok</div>
+          <div class="kpi-val" id="ov-tt-spend" style="color:var(--cyan)">—</div>
+          <div class="kpi-txt" id="ov-tt-txt">registros manuales</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-acc" style="background:var(--cyan)"></div>
+          <div class="kpi-lbl">Costo / Lead TikTok</div>
+          <div class="kpi-val" id="ov-cpl-tt" style="color:var(--cyan)">—</div>
+          <div class="kpi-txt">leads con canal TIKTOK</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-acc" style="background:var(--rose)"></div>
+          <div class="kpi-lbl">Compras Meta (px)</div>
+          <div class="kpi-val" id="ov-purchases" style="color:var(--rose)">—</div>
+          <div class="kpi-txt" id="ov-pv-txt">— purchase_value</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-acc" style="background:var(--amber)"></div>
+          <div class="kpi-lbl">Impresiones Totales</div>
+          <div class="kpi-val" id="ov-impr" style="color:var(--amber)">—</div>
+          <div class="kpi-txt" id="ov-clicks-txt">— clicks</div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="g2">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">💰 Gasto por Segmento</span>
+            <span class="card-badge" style="background:rgba(201,168,76,0.1);color:var(--gold)">META</span>
+          </div>
+          <canvas id="ch-segmento" style="max-height:220px;"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">🌍 Gasto por País</span>
+            <span class="card-badge" style="background:rgba(59,130,246,0.1);color:var(--blue)">META</span>
+          </div>
+          <canvas id="ch-pais" style="max-height:220px;"></canvas>
+        </div>
+      </div>
+
+      <!-- ROAS note -->
+      <div class="roas-note">
+        ℹ️ <strong>ROAS Real vs ROAS Meta:</strong> El ROAS Real usa las ventas registradas en Kommo con canal_adquisicion = INSTAGRAM — más conservador y confiable. El ROAS Meta usa la atribución propia de Meta (ventana 7 días clic / 1 día vista), siempre más alto. Mostrar ambos para entender la brecha de atribución.
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         TAB: CAMPAÑAS
+    ══════════════════════════════════ -->
+    <div class="tab-pane" id="tab-campanas">
+
+      <div class="filter-row" id="camp-filters">
+        <span class="filter-lbl">Segmento:</span>
+        <button class="fpill on" data-seg="">Todos</button>
+        <button class="fpill" data-seg="Wholesale">Wholesale</button>
+        <button class="fpill" data-seg="Wholesale RT">Wholesale RT</button>
+        <button class="fpill" data-seg="Wholesale Exclu">Wholesale Exclu</button>
+        <button class="fpill" data-seg="Instagram Perfil">Instagram Perfil</button>
+        <button class="fpill" data-seg="Ventas Web">Ventas Web</button>
+        <span class="filter-lbl" style="margin-left:8px;">País:</span>
+        <div id="pais-pills" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+      </div>
+
+      <div class="card" style="padding:0;">
+        <div class="tbl-wrap">
+          <table id="tbl-campanas">
+            <thead>
+              <tr>
+                <th>Campaña</th>
+                <th>Seg.</th>
+                <th>País</th>
+                <th class="td-num" data-sort="spend">Gasto ↕</th>
+                <th class="td-num" data-sort="impressions">Impr. ↕</th>
+                <th class="td-num" data-sort="link_clicks">Clicks ↕</th>
+                <th class="td-num" data-sort="ctr">CTR ↕</th>
+                <th class="td-num" data-sort="cpm">CPM ↕</th>
+                <th class="td-num" data-sort="cpc">CPC ↕</th>
+                <th class="td-num" data-sort="reach">Alcance ↕</th>
+                <th class="td-num" data-sort="frequency">Frec. ↕</th>
+                <th class="td-num" data-sort="purchases">Compras ↕</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-campanas"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sync-info" id="camp-count" style="text-align:right;padding-top:4px;">—</div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         TAB: CONVERSIÓN
+    ══════════════════════════════════ -->
+    <div class="tab-pane" id="tab-conversion">
+      <div class="card" style="padding:0;">
+        <div class="tbl-wrap">
+          <table id="tbl-conv">
+            <thead>
+              <tr>
+                <th>Canal</th>
+                <th class="td-num">Inversión</th>
+                <th class="td-num">Leads Nuevos</th>
+                <th class="td-num">Órdenes</th>
+                <th class="td-num">Revenue Kommo</th>
+                <th class="td-num">Costo / Lead</th>
+                <th class="td-num">Costo / Conv.</th>
+                <th class="td-num">ROAS Real</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-conv"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="roas-note" style="margin-top:0;">
+        ℹ️ <strong>Leads Nuevos:</strong> conteo de leads con etapa = leads_entrantes en el período. <strong>Órdenes:</strong> etapa = orden_recibida. <strong>Revenue Kommo:</strong> suma de presupuesto en orden_recibida por canal. <strong>ROAS Real:</strong> Revenue ÷ Inversión.
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         TAB: TOP CTR
+    ══════════════════════════════════ -->
+    <div class="tab-pane" id="tab-topctr">
+      <div class="filter-row" id="ctr-filters">
+        <span class="filter-lbl">Segmento:</span>
+        <button class="fpill on" data-cseg="">Todos</button>
+        <button class="fpill" data-cseg="Wholesale">Wholesale</button>
+        <button class="fpill" data-cseg="Instagram Perfil">Instagram Perfil</button>
+        <button class="fpill" data-cseg="Ventas Web">Ventas Web</button>
+        <span class="filter-lbl" style="margin-left:8px;">País:</span>
+        <div id="ctr-pais-pills" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">🏆 Ranking por CTR</span>
+          <span class="card-badge" style="background:rgba(201,168,76,0.1);color:var(--gold)">TOP 20</span>
+        </div>
+        <div id="ctr-list"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         TAB: TIKTOK MANUAL
+    ══════════════════════════════════ -->
+    <div class="tab-pane" id="tab-tiktok">
+      <div class="g2" style="align-items:start;">
+
+        <!-- FORM -->
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">📱 Registrar Inversión TikTok</span>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-lbl">Fecha inicio <span>*</span></label>
+              <input class="form-inp" type="date" id="tt-date-start">
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Fecha fin <span>*</span></label>
+              <input class="form-inp" type="date" id="tt-date-stop">
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">País <span>*</span></label>
+              <select class="form-sel" id="tt-country">
+                <option value="">— Seleccionar —</option>
+                <option>Colombia</option>
+                <option>Venezuela</option>
+                <option>México</option>
+                <option>Ecuador</option>
+                <option>Perú</option>
+                <option>Rep. Dominicana</option>
+                <option>Puerto Rico</option>
+                <option>Honduras</option>
+                <option>Guatemala</option>
+                <option>El Salvador</option>
+                <option>USA</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Segmento</label>
+              <select class="form-sel" id="tt-segment">
+                <option value="">— Seleccionar —</option>
+                <option>Wholesale</option>
+                <option>Instagram Perfil</option>
+                <option>Ventas Web</option>
+                <option>General</option>
+              </select>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-lbl">Nombre de campaña</label>
+              <input class="form-inp" type="text" id="tt-campaign" placeholder="Ej: TRAFICO-WHOLESALE-COL-MAYO">
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Gasto USD <span>*</span></label>
+              <input class="form-inp" type="number" id="tt-spend" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Resultados (conversiones)</label>
+              <input class="form-inp" type="number" id="tt-results" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Impresiones</label>
+              <input class="form-inp" type="number" id="tt-impressions" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Clicks</label>
+              <input class="form-inp" type="number" id="tt-clicks" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Alcance</label>
+              <input class="form-inp" type="number" id="tt-reach" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Compras atribuidas</label>
+              <input class="form-inp" type="number" id="tt-purchases" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Valor compras USD</label>
+              <input class="form-inp" type="number" id="tt-purchase-value" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-lbl">Notas</label>
+              <textarea class="form-textarea" id="tt-notes" placeholder="Observaciones, creativos, etc."></textarea>
+            </div>
+            <div class="form-full" style="display:flex;justify-content:flex-end;gap:8px;">
+              <button class="btn-save" id="btn-tt-save" onclick="saveTiktok()">✅ Guardar registro</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HISTORIAL -->
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">📋 Historial TikTok</span>
+          </div>
+          <div class="tbl-wrap">
+            <table id="tbl-tiktok">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Campaña</th>
+                  <th>País</th>
+                  <th class="td-num">Gasto</th>
+                  <th class="td-num">Resultados</th>
+                  <th class="td-num">Compras</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-tiktok"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="tt-empty" style="display:none;">
+            <div class="empty-icon">📱</div>
+            <div class="empty-txt">Sin registros TikTok todavía</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /page -->
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
+const SB_URL='https://smufcsbhfzmauwngaglb.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWZjc2JoZnptYXV3bmdhZ2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTE4NTMsImV4cCI6MjA3NDU2Nzg1M30.ZNLlyErkDOzI3c9a0HW5CSf5Dy334eBbTW8DFkwyt6Q';
+// ⚠️ Reemplazar con la URL del webhook de n8n en Railway:
+const N8N_WEBHOOK='https://TU-N8N-EN-RAILWAY.railway.app/webhook/meta-ads-sync';
+
+const PAL=['#C9A84C','#3B82F6','#10B981','#6366F1','#A78BFA','#F472B6','#F59E0B','#06B6D4','#F87171','#8B5CF6','#F97316','#14B8A6'];
+
+const $=id=>document.getElementById(id);
+const fmtM=v=>{if(!v||+v===0)return'—';return`$${Math.round(+v).toLocaleString('en-US')}`;};
+const fmtM2=v=>{if(!v||+v===0)return'—';return`$${(+v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}`;};
+const fmtN=v=>{if(!v||+v===0)return'0';if(v>=1e6)return`${(v/1e6).toFixed(1)}M`;if(v>=1e3)return`${(v/1e3).toFixed(0)}K`;return String(Math.round(v));};
+const fmtR=v=>{if(!v||+v===0)return'—';return`${(+v).toFixed(2)}x`;};
+const fmtPct=v=>{if(v===null||v===undefined)return'—';return`${(+v).toFixed(2)}%`;};
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════
+function doLogin(){
+  const u=$('lu').value.trim();
+  const p=$('lp').value;
+  if(u==='Kommo-dashboard'&&p==='Acceso_Oasisn8n'){
+    localStorage.setItem('oas_auth','1');
+    $('login-screen').style.display='none';
+    startApp();
+  } else {
+    $('lerr').textContent='❌ Usuario o contraseña incorrectos';
+    $('lu').style.borderColor='var(--red)';
+    $('lp').style.borderColor='var(--red)';
+  }
+}
+$('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+$('lu').addEventListener('input',()=>{$('lerr').textContent='';$('lu').style.borderColor='';$('lp').style.borderColor='';});
+
+if(localStorage.getItem('oas_auth')==='1'){
+  $('login-screen').style.display='none';
+  startApp();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const S={
+  period:'30d',
+  campSeg:'',
+  campPais:'',
+  ctrSeg:'',
+  ctrPais:'',
+  campSort:{col:'spend',dir:'desc'},
+  charts:{},
+  metaData:[],
+  tiktokData:[],
+  kommoLeads:[],
+  kommoOrdenes:[]
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SUPABASE FETCH
+// ═══════════════════════════════════════════════════════════════
+async function sbGet(path){
+  const r=await fetch(`${SB_URL}/rest/v1/${path}`,{
+    headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Accept':'application/json'}
+  });
+  if(!r.ok)throw new Error(`SB error ${r.status}`);
+  return r.json();
+}
+
+async function sbPost(table, body){
+  const r=await fetch(`${SB_URL}/rest/v1/${table}`,{
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify(body)
+  });
+  if(!r.ok){const t=await r.text();throw new Error(t);}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DATE RANGE
+// ═══════════════════════════════════════════════════════════════
+function getPeriodDates(p){
+  const now=new Date();
+  const to=now.toISOString().split('T')[0];
+  let from;
+  if(p==='7d'){const d=new Date(now);d.setDate(d.getDate()-7);from=d.toISOString().split('T')[0];}
+  else if(p==='30d'){const d=new Date(now);d.setDate(d.getDate()-30);from=d.toISOString().split('T')[0];}
+  else if(p==='90d'){const d=new Date(now);d.setDate(d.getDate()-90);from=d.toISOString().split('T')[0];}
+  return{from,to};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOAD DATA
+// ═══════════════════════════════════════════════════════════════
+async function loadData(){
+  const{from,to}=getPeriodDates(S.period);
+
+  // Meta insights (latest view para campañas, raw para overview/ctr)
+  const [metaRaw, tiktok, kommoIG, kommoTT, kommoOrd] = await Promise.all([
+    sbGet(`meta_ads_insights?sync_date=gte.${from}&sync_date=lte.${to}&order=spend.desc&limit=1000`),
+    sbGet(`tiktok_ads_manual?created_at=gte.${from}T00:00:00&order=created_at.desc&limit=200`),
+    sbGet(`kommo_leads_eventos?etapa=eq.leads_entrantes&canal_adquisicion=eq.INSTAGRAM&counted_at=gte.${from}T00:00:00&counted_at=lte.${to}T23:59:59&select=lead_id,counted_at&limit=5000`),
+    sbGet(`kommo_leads_eventos?etapa=eq.leads_entrantes&canal_adquisicion=eq.TIKTOK&counted_at=gte.${from}T00:00:00&counted_at=lte.${to}T23:59:59&select=lead_id,counted_at&limit=5000`),
+    sbGet(`kommo_leads_eventos?etapa=eq.orden_recibida&presupuesto=gt.0&counted_at=gte.${from}T00:00:00&counted_at=lte.${to}T23:59:59&select=lead_id,presupuesto,canal_adquisicion,counted_at&limit=5000`)
+  ]);
+
+  S.metaData=metaRaw||[];
+  S.tiktokData=tiktok||[];
+  S.kommoLeadsIG=kommoIG||[];
+  S.kommoLeadsTT=kommoTT||[];
+  S.kommoOrdenes=kommoOrd||[];
+
+  // Update sync time
+  $('sync-txt').textContent=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',timeZone:'America/Bogota'});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OVERVIEW
+// ═══════════════════════════════════════════════════════════════
+function renderOverview(){
+  const data=S.metaData;
+  const tt=S.tiktokData;
+  const ordenes=S.kommoOrdenes;
+
+  // Gasto Meta
+  const totalSpend=data.reduce((a,r)=>a+(+r.spend||0),0);
+  $('ov-spend').textContent=fmtM(totalSpend);
+  $('ov-spend-txt').textContent=`${data.length} registros · ${new Set(data.map(r=>r.campaign_id)).size} campañas`;
+
+  // ROAS Meta (atribución)
+  const totalPV=data.reduce((a,r)=>a+(+r.purchase_value||0),0);
+  const roasMeta=totalSpend>0?totalPV/totalSpend:0;
+  $('ov-roas-meta').textContent=roasMeta>0?fmtR(roasMeta):'—';
+
+  // ROAS Real (Kommo)
+  const revIG=ordenes.filter(r=>r.canal_adquisicion==='INSTAGRAM').reduce((a,r)=>a+(+r.presupuesto||0),0);
+  const roasReal=totalSpend>0?revIG/totalSpend:0;
+  $('ov-roas-real').textContent=roasReal>0?fmtR(roasReal):'—';
+
+  // CPL Meta
+  const leadsIG=S.kommoLeadsIG.length;
+  const cplMeta=leadsIG>0?totalSpend/leadsIG:0;
+  $('ov-cpl-meta').textContent=cplMeta>0?fmtM2(cplMeta):'—';
+  $('ov-cpl-meta-txt').textContent=`${leadsIG} leads INSTAGRAM`;
+
+  // TikTok
+  const ttSpend=tt.reduce((a,r)=>a+(+r.spend||0),0);
+  $('ov-tt-spend').textContent=ttSpend>0?fmtM(ttSpend):'$0';
+  $('ov-tt-txt').textContent=`${tt.length} registros manuales`;
+  const leadsTT=S.kommoLeadsTT.length;
+  const cplTT=leadsTT>0&&ttSpend>0?ttSpend/leadsTT:0;
+  $('ov-cpl-tt').textContent=cplTT>0?fmtM2(cplTT):'—';
+
+  // Purchases
+  const totalPurch=data.reduce((a,r)=>a+(+r.purchases||0),0);
+  $('ov-purchases').textContent=fmtN(totalPurch);
+  $('ov-pv-txt').textContent=`purchase_value: ${fmtM(totalPV)}`;
+
+  // Impressions
+  const totalImpr=data.reduce((a,r)=>a+(+r.impressions||0),0);
+  const totalClicks=data.reduce((a,r)=>a+(+r.link_clicks||0),0);
+  $('ov-impr').textContent=fmtN(totalImpr);
+  $('ov-clicks-txt').textContent=`${fmtN(totalClicks)} link clicks`;
+
+  // Chart: Gasto por segmento
+  const segMap={};
+  data.forEach(r=>{const s=r.segment||'General';segMap[s]=(segMap[s]||0)+(+r.spend||0);});
+  const segs=Object.entries(segMap).sort((a,b)=>b[1]-a[1]);
+  drawDoughnut('ch-segmento',segs.map(s=>s[0]),segs.map(s=>Math.round(s[1])),PAL);
+
+  // Chart: Gasto por país
+  const paisMap={};
+  data.forEach(r=>{const p=r.country||r.country_iso||'?';paisMap[p]=(paisMap[p]||0)+(+r.spend||0);});
+  const paises=Object.entries(paisMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  drawBar('ch-pais',paises.map(p=>p[0]),paises.map(p=>Math.round(p[1])),PAL[1]);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CAMPAÑAS
+// ═══════════════════════════════════════════════════════════════
+function renderCampanas(){
+  // Build dynamic pais pills
+  const paises=[...new Set(S.metaData.map(r=>r.country||r.country_iso))].filter(Boolean).sort();
+  const pp=$('pais-pills');
+  pp.innerHTML=`<button class="fpill on" data-pais="">Todos</button>`+
+    paises.map(p=>`<button class="fpill" data-pais="${p}">${p}</button>`).join('');
+  pp.querySelectorAll('.fpill').forEach(b=>b.addEventListener('click',e=>{
+    pp.querySelectorAll('.fpill').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    S.campPais=b.dataset.pais;
+    renderCampanasTable();
+  }));
+  renderCampanasTable();
+}
+
+function renderCampanasTable(){
+  let rows=S.metaData.filter(r=>{
+    if(S.campSeg&&r.segment!==S.campSeg)return false;
+    if(S.campPais&&(r.country||r.country_iso)!==S.campPais)return false;
+    return true;
+  });
+  // Sort
+  const{col,dir}=S.campSort;
+  rows.sort((a,b)=>{
+    const av=+a[col]||0,bv=+b[col]||0;
+    return dir==='desc'?bv-av:av-bv;
+  });
+  const tbody=$('tbody-campanas');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--muted);">Sin datos para los filtros seleccionados</td></tr>`;return;}
+  tbody.innerHTML=rows.map(r=>{
+    const ctr=+r.ctr||0;
+    const ctrClass=ctr>=6?'ctr-hi':ctr>=3?'ctr-mid':'ctr-lo';
+    return`<tr>
+      <td class="td-name" title="${r.campaign_name}">${r.campaign_name}</td>
+      <td style="color:var(--muted);font-size:9px;">${r.segment||'—'}</td>
+      <td>${r.country||r.country_iso||'—'}</td>
+      <td class="td-num" style="color:var(--gold);">${fmtM2(r.spend)}</td>
+      <td class="td-num">${fmtN(r.impressions)}</td>
+      <td class="td-num">${fmtN(r.link_clicks)}</td>
+      <td class="td-num ${ctrClass}">${fmtPct(r.ctr)}</td>
+      <td class="td-num">${fmtM2(r.cpm)}</td>
+      <td class="td-num">${r.cpc?'$'+(+r.cpc).toFixed(4):'—'}</td>
+      <td class="td-num">${fmtN(r.reach)}</td>
+      <td class="td-num">${r.frequency?(+r.frequency).toFixed(1)+'x':'—'}</td>
+      <td class="td-num" style="color:${(+r.purchases||0)>0?'var(--rose)':'var(--muted)'};">${r.purchases||0}</td>
+    </tr>`;
+  }).join('');
+  $('camp-count').textContent=`${rows.length} registros · Ordenado por ${col} ${dir==='desc'?'↓':'↑'}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONVERSIÓN
+// ═══════════════════════════════════════════════════════════════
+function renderConversion(){
+  const data=S.metaData;
+  const tt=S.tiktokData;
+  const ords=S.kommoOrdenes;
+
+  const metaSpend=data.reduce((a,r)=>a+(+r.spend||0),0);
+  const ttSpend=tt.reduce((a,r)=>a+(+r.spend||0),0);
+
+  const leadsIG=S.kommoLeadsIG.length;
+  const leadsTT=S.kommoLeadsTT.length;
+
+  const ordsIG=ords.filter(r=>r.canal_adquisicion==='INSTAGRAM');
+  const ordsTT=ords.filter(r=>r.canal_adquisicion==='TIKTOK');
+  const ordsWEB=ords.filter(r=>r.canal_adquisicion==='WEBSITE'||r.canal_adquisicion==='WEB');
+  const ordsNULL=ords.filter(r=>!r.canal_adquisicion);
+
+  const revIG=ordsIG.reduce((a,r)=>a+(+r.presupuesto||0),0);
+  const revTT=ordsTT.reduce((a,r)=>a+(+r.presupuesto||0),0);
+  const revWEB=ordsWEB.reduce((a,r)=>a+(+r.presupuesto||0),0);
+  const revNULL=ordsNULL.reduce((a,r)=>a+(+r.presupuesto||0),0);
+  const totalRev=ords.reduce((a,r)=>a+(+r.presupuesto||0),0);
+  const totalLeads=leadsIG+leadsTT;
+  const totalSpend=metaSpend+ttSpend;
+
+  const mkRow=(canal,inv,leads,nOrds,rev,note='')=>{
+    const cpl=leads>0&&inv>0?inv/leads:null;
+    const cpc=nOrds>0&&inv>0?inv/nOrds:null;
+    const roas=rev>0&&inv>0?rev/inv:null;
+    return`<tr${note?' class="conv-row-total"':''}>
+      <td style="font-weight:700;color:var(--text);">${canal}</td>
+      <td class="td-num" style="color:var(--gold);">${inv>0?fmtM(inv):'—'}</td>
+      <td class="td-num">${leads>0?leads:'—'}</td>
+      <td class="td-num">${nOrds>0?nOrds:'—'}</td>
+      <td class="td-num" style="color:var(--green);">${rev>0?fmtM(rev):'—'}</td>
+      <td class="td-num">${cpl?fmtM2(cpl):'—'}</td>
+      <td class="td-num">${cpc?fmtM2(cpc):'—'}</td>
+      <td class="td-num" style="color:${roas&&roas>=1?'var(--green)':'var(--red)'};">${roas?fmtR(roas):'—'}</td>
+    </tr>`;
+  };
+
+  $('tbody-conv').innerHTML=
+    mkRow('📘 Meta (Instagram)',metaSpend,leadsIG,ordsIG.length,revIG)+
+    mkRow('📱 TikTok',ttSpend,leadsTT,ordsTT.length,revTT)+
+    mkRow('🌐 Website / Orgánico',0,0,ordsWEB.length,revWEB)+
+    mkRow('❓ Sin canal / Mayorista',0,0,ordsNULL.length,revNULL)+
+    mkRow('📊 TOTAL',totalSpend,totalLeads,ords.length,totalRev,true);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOP CTR
+// ═══════════════════════════════════════════════════════════════
+function renderTopCTR(){
+  const pp=$('ctr-pais-pills');
+  const paises=[...new Set(S.metaData.map(r=>r.country||r.country_iso))].filter(Boolean).sort();
+  pp.innerHTML=`<button class="fpill on" data-cpais="">Todos</button>`+
+    paises.map(p=>`<button class="fpill" data-cpais="${p}">${p}</button>`).join('');
+  pp.querySelectorAll('.fpill').forEach(b=>b.addEventListener('click',e=>{
+    pp.querySelectorAll('.fpill').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    S.ctrPais=b.dataset.cpais;
+    renderCTRList();
+  }));
+  renderCTRList();
+}
+
+function renderCTRList(){
+  let rows=S.metaData.filter(r=>{
+    if(S.ctrSeg&&r.segment!==S.ctrSeg)return false;
+    if(S.ctrPais&&(r.country||r.country_iso)!==S.ctrPais)return false;
+    if(!(+r.ctr>0))return false;
+    return true;
+  });
+  rows.sort((a,b)=>(+b.ctr||0)-(+a.ctr||0));
+  rows=rows.slice(0,20);
+  const maxCTR=rows.length>0?(+rows[0].ctr||0):1;
+  const el=$('ctr-list');
+  if(!rows.length){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-txt">Sin datos</div></div>';return;}
+  el.innerHTML=rows.map((r,i)=>{
+    const ctr=+r.ctr||0;
+    const pct=maxCTR>0?(ctr/maxCTR)*100:0;
+    const name=r.campaign_name.length>50?r.campaign_name.substring(0,50)+'…':r.campaign_name;
+    return`<div class="ctr-bar-row">
+      <span class="ctr-rank">#${i+1}</span>
+      <span class="ctr-name" title="${r.campaign_name}">${name}</span>
+      <div class="ctr-bar-wrap"><div class="ctr-bar-fill" style="width:${pct}%"></div></div>
+      <span class="ctr-pct">${fmtPct(ctr)}</span>
+      <span class="ctr-country">${r.country||r.country_iso||'—'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TIKTOK MANUAL
+// ═══════════════════════════════════════════════════════════════
+async function saveTiktok(){
+  const btn=$('btn-tt-save');
+  const dateStart=$('tt-date-start').value;
+  const dateStop=$('tt-date-stop').value;
+  const country=$('tt-country').value;
+  const spend=$('tt-spend').value;
+  if(!dateStart||!dateStop||!country||!spend){showToast('❌ Completá los campos obligatorios (*)','err');return;}
+  btn.disabled=true;btn.textContent='⏳ Guardando...';
+  try{
+    await sbPost('tiktok_ads_manual',{
+      date_start:dateStart,
+      date_stop:dateStop,
+      campaign_name:$('tt-campaign').value||null,
+      country,
+      segment:$('tt-segment').value||null,
+      spend:parseFloat(spend)||0,
+      impressions:parseInt($('tt-impressions').value)||null,
+      clicks:parseInt($('tt-clicks').value)||null,
+      reach:parseInt($('tt-reach').value)||null,
+      result_count:parseInt($('tt-results').value)||null,
+      purchases:parseInt($('tt-purchases').value)||null,
+      purchase_value:parseFloat($('tt-purchase-value').value)||null,
+      notes:$('tt-notes').value||null,
+      created_by:'dashboard'
+    });
+    showToast('✅ Registro TikTok guardado','ok');
+    // Reset form
+    ['tt-date-start','tt-date-stop','tt-campaign','tt-spend','tt-impressions','tt-clicks',
+     'tt-reach','tt-results','tt-purchases','tt-purchase-value','tt-notes'].forEach(id=>{$(id).value='';});
+    $('tt-country').value='';$('tt-segment').value='';
+    // Reload tiktok data
+    S.tiktokData=await sbGet(`tiktok_ads_manual?order=created_at.desc&limit=200`);
+    renderTiktokHistory();
+  }catch(e){
+    showToast('❌ Error al guardar: '+e.message,'err');
+  }
+  btn.disabled=false;btn.textContent='✅ Guardar registro';
+}
+
+function renderTiktokHistory(){
+  const rows=S.tiktokData;
+  const tbody=$('tbody-tiktok');
+  const empty=$('tt-empty');
+  if(!rows.length){tbody.innerHTML='';empty.style.display='flex';return;}
+  empty.style.display='none';
+  tbody.innerHTML=rows.map(r=>`<tr>
+    <td style="font-size:9px;">${r.date_start||'—'}</td>
+    <td class="td-name" title="${r.campaign_name||''}">${r.campaign_name||'—'}</td>
+    <td>${r.country||'—'}</td>
+    <td class="td-num" style="color:var(--cyan);">${fmtM2(r.spend)}</td>
+    <td class="td-num">${r.result_count||'—'}</td>
+    <td class="td-num">${r.purchases||'—'}</td>
+  </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════════════
+function dc(id){if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];}}
+
+function drawDoughnut(id,labels,data,colors){
+  dc(id);
+  const ctx=document.getElementById(id);
+  if(!ctx)return;
+  S.charts[id]=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors.slice(0,labels.length),borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:true,cutout:'65%',
+      plugins:{legend:{position:'right',labels:{color:'rgba(240,240,248,0.6)',font:{family:'Montserrat',size:9},padding:8,boxWidth:10}},
+        tooltip:{callbacks:{label:c=>`${c.label}: $${c.raw.toLocaleString('en-US')}`}}}}
+  });
+}
+
+function drawBar(id,labels,data,color){
+  dc(id);
+  const ctx=document.getElementById(id);
+  if(!ctx)return;
+  S.charts[id]=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:color+'cc',borderColor:color,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:true,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`$${c.raw.toLocaleString('en-US')}`}}},
+      scales:{x:{ticks:{color:'rgba(240,240,248,0.4)',font:{size:8},callback:v=>`$${fmtN(v)}`},grid:{color:'rgba(255,255,255,0.05)'}},
+              y:{ticks:{color:'rgba(240,240,248,0.6)',font:{size:8}},grid:{display:false}}}}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REFRESH META
+// ═══════════════════════════════════════════════════════════════
+async function refreshMeta(){
+  const btn=$('btn-refresh-meta');
+  btn.textContent='⏳ Sincronizando...';btn.disabled=true;
+  try{
+    await fetch(N8N_WEBHOOK,{method:'POST'});
+    await new Promise(r=>setTimeout(r,4000));
+    await loadData();
+    renderAll();
+    showToast('✅ Datos de Meta actualizados','ok');
+  }catch(e){
+    showToast('❌ Error al sincronizar','err');
+  }
+  btn.textContent='🔄 Sync Meta';btn.disabled=false;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+function showToast(msg,type='ok'){
+  const t=$('toast');
+  t.textContent=msg;t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════════════════
+function renderAll(){
+  renderOverview();
+  renderCampanas();
+  renderConversion();
+  renderTopCTR();
+  renderTiktokHistory();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════════════════════════
+function setupEvents(){
+  // Period pills
+  document.querySelectorAll('#period-pills .pill').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#period-pills .pill').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    S.period=b.dataset.p;
+    $('loader').style.display='flex';
+    loadData().then(()=>{renderAll();$('loader').style.display='none';});
+  }));
+
+  // Sub-tabs
+  document.querySelectorAll('.stab').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.stab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    $('tab-'+b.dataset.tab).classList.add('on');
+  }));
+
+  // Campañas segment filter
+  document.querySelectorAll('#camp-filters .fpill[data-seg]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#camp-filters .fpill[data-seg]').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    S.campSeg=b.dataset.seg;
+    renderCampanasTable();
+  }));
+
+  // Top CTR segment filter
+  document.querySelectorAll('#ctr-filters .fpill[data-cseg]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#ctr-filters .fpill[data-cseg]').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    S.ctrSeg=b.dataset.cseg;
+    renderCTRList();
+  }));
+
+  // Campañas table sort
+  document.querySelectorAll('#tbl-campanas thead th[data-sort]').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const col=th.dataset.sort;
+      if(S.campSort.col===col){S.campSort.dir=S.campSort.dir==='desc'?'asc':'desc';}
+      else{S.campSort={col,dir:'desc'};}
+      renderCampanasTable();
+    });
+  });
+
+  // Refresh Meta button
+  $('btn-refresh-meta').addEventListener('click',refreshMeta);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════════════════
+async function startApp(){
+  $('loader').style.display='flex';
+  $('app').style.display='none';
+  try{
+    await loadData();
+    $('app').style.display='block';
+    setupEvents();
+    renderAll();
+  }catch(e){
+    console.error('Error cargando datos:',e);
+    showToast('❌ Error cargando datos de Supabase','err');
+    $('app').style.display='block';
+  }finally{
+    $('loader').style.display='none';
+  }
+}
+</script>
+</body>
+</html>
