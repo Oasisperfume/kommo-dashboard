@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oasis Perfumes · CRM Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root{
+  --bg:#080812;--surface:#0e0e1a;--surface2:#13131f;--border:rgba(255,255,255,0.07);
+  --blue:#3B82F6;--indigo:#6366F1;--gold:#C9A84C;--green:#10B981;
+  --violet:#A78BFA;--rose:#F472B6;--amber:#F59E0B;--red:#F87171;--cyan:#06B6D4;
+  --text:#F0F0F8;--sub:rgba(240,240,248,0.55);--muted:rgba(240,240,248,0.3);
+  --r:12px;--gap:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:360px;text-align:center;}
+.login-logo{font-size:22px;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
+.login-sub{font-size:9px;color:var(--muted);letter-spacing:0.25em;text-transform:uppercase;margin-bottom:28px;}
+.login-input{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:12px;outline:none;margin-bottom:10px;transition:border-color 0.2s;}
+.login-input:focus{border-color:var(--blue);}
+.login-btn{width:100%;padding:11px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:opacity 0.2s;margin-top:4px;}
+.login-btn:hover{opacity:0.88;}
+.login-err{color:var(--red);font-size:10px;margin-top:8px;min-height:14px;}
+
+/* ── LOADER ── */
+#loader{position:fixed;inset:0;background:var(--bg);z-index:1000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.ld-ring{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-txt{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.1em;}
+.ld-prog{font-size:11px;color:var(--blue);font-weight:700;}
+
+/* ── HEADER ── */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(8,8,18,0.97);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);padding:10px 20px;}
+.hdr-r1{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.hdr-brand{display:flex;flex-direction:column;}
+.hdr-name{font-size:15px;font-weight:900;letter-spacing:0.07em;text-transform:uppercase;}
+.hdr-sub2{font-size:7px;color:var(--muted);letter-spacing:0.3em;text-transform:uppercase;}
+.sep{width:1px;height:24px;background:var(--border);}
+.pill-row{display:flex;gap:4px;flex-wrap:wrap;}
+.pill{padding:4px 10px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--sub);font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;cursor:pointer;transition:all 0.18s;letter-spacing:0.05em;text-transform:uppercase;}
+.pill:hover{border-color:rgba(255,255,255,0.2);color:var(--text);}
+.pill.on{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 12px rgba(59,130,246,0.3);}
+.pill.emb.on{color:#fff;}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.dot-live{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.sync-info{font-size:9px;color:var(--muted);font-weight:600;}
+.hdr-r2{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.emb-label{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.1em;}
+.tag-sel{padding:4px 8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;color:var(--sub);font-size:9px;font-family:'Montserrat',sans-serif;outline:none;cursor:pointer;}
+
+/* ── FILTER BADGES ── */
+#afbar{display:flex;gap:6px;flex-wrap:wrap;padding:6px 20px;border-bottom:1px solid var(--border);min-height:0;transition:all 0.2s;}
+#afbar:not(.has-f){display:none;}
+.fbadge{display:flex;align-items:center;gap:6px;padding:3px 10px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:100px;font-size:9px;color:var(--blue);font-weight:700;}
+.fbadge .x{cursor:pointer;opacity:0.7;font-size:10px;}
+.fbadge .x:hover{opacity:1;}
+
+/* ── CONTENT ── */
+.page{padding:16px 20px;display:flex;flex-direction:column;gap:var(--gap);}
+
+/* ── KPI ROWS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--gap);}
+.kpi-row2{display:grid;grid-template-columns:1fr 3fr;gap:var(--gap);}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;cursor:default;}
+.kpi-acc{position:absolute;top:0;left:0;width:3px;height:100%;}
+.kpi-lbl{font-size:8px;font-weight:700;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.kpi-val{font-size:26px;font-weight:900;line-height:1;margin-bottom:4px;}
+.kpi-txt{font-size:9px;color:var(--sub);}
+.kpi-chg{font-size:10px;font-weight:700;margin-top:4px;}
+.kpi-chg.up{color:var(--green);}
+.kpi-chg.down{color:var(--red);}
+.kpi-chg.flat{color:var(--muted);}
+.spark-wrap{height:36px;margin-top:8px;position:relative;}
+.spark-wrap canvas{width:100%!important;height:36px!important;}
+
+/* Presupuesto KPI */
+.pres-row{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;}
+.pres-item{display:flex;flex-direction:column;gap:1px;}
+.pres-lbl{font-size:7px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;}
+.pres-val{font-size:12px;font-weight:700;}
+
+/* ── CHART GRID ── */
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--gap);}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);}
+.g4{display:grid;grid-template-columns:repeat(4,1fr) 1.5fr;gap:var(--gap);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;transition:border-color 0.2s;}
+.card.active-f{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)33;}
+.ch{display:flex;align-items:center;gap:6px;margin-bottom:12px;}
+.ct{font-size:10px;font-weight:700;color:var(--text);}
+.cb{font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:auto;}
+canvas{width:100%!important;max-height:240px;}
+.hm-wrap{overflow-x:auto;}
+
+/* ── GAUGE ── */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;padding-top:6px;}
+.gauge-info{text-align:center;margin-top:-28px;}
+.g-pct{font-size:32px;font-weight:900;transition:color 0.4s;}
+.g-sub{font-size:9px;color:var(--sub);margin-top:2px;font-weight:600;}
+
+/* ── PROCESO ESTIMATE ── */
+.est-grid{display:grid;gap:4px;margin-top:4px;}
+.est-row{display:flex;align-items:center;gap:8px;padding:5px 0;}
+.est-lbl{font-size:9px;font-weight:700;color:var(--sub);width:180px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.04em;}
+.est-bar-wrap{flex:1;background:rgba(255,255,255,0.04);border-radius:4px;height:18px;position:relative;overflow:hidden;}
+.est-bar{height:100%;border-radius:4px;transition:width 0.6s ease;display:flex;align-items:center;padding:0 6px;}
+.est-bar-txt{font-size:9px;font-weight:700;color:#fff;white-space:nowrap;}
+.est-meta{font-size:9px;color:var(--muted);width:120px;flex-shrink:0;text-align:right;}
+
+/* ── DIFUSION ── */
+.dif-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr) 1.5fr;gap:var(--gap);}
+.dif-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+.dif-lbl{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+.dif-val{font-size:22px;font-weight:900;}
+.dif-sub{font-size:9px;color:var(--sub);margin-top:3px;}
+
+/* ── TABLA ── */
+.tbl-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.tbl-ttl{font-size:11px;font-weight:700;}
+.tbl-cnt{font-size:9px;color:var(--muted);font-weight:600;}
+.tbl-ctrls{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;}
+.tbl-search{padding:5px 10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:10px;font-family:'Montserrat',sans-serif;outline:none;width:180px;}
+.tbl-search:focus{border-color:var(--blue);}
+.tbl-search::placeholder{color:var(--muted);}
+.pg-sel{padding:4px 6px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;color:var(--sub);font-size:9px;font-family:'Montserrat',sans-serif;outline:none;cursor:pointer;}
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+thead th{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap;cursor:pointer;user-select:none;font-size:8px;}
+thead th:hover{color:var(--text);}
+tbody td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.025);color:var(--sub);}
+tbody tr:hover{background:rgba(59,130,246,0.04);}
+.bdg{display:inline-block;padding:2px 6px;border-radius:3px;font-size:8px;font-weight:700;}
+.b-blue{background:rgba(59,130,246,0.18);color:var(--blue);}
+.b-gold{background:rgba(201,168,76,0.18);color:var(--gold);}
+.b-green{background:rgba(16,185,129,0.18);color:var(--green);}
+.b-violet{background:rgba(167,139,250,0.18);color:var(--violet);}
+.b-indigo{background:rgba(99,102,241,0.18);color:var(--indigo);}
+.b-rose{background:rgba(244,114,182,0.18);color:var(--rose);}
+
+/* ── PAGINACIÓN ── */
+.pg{display:flex;align-items:center;gap:6px;margin-top:12px;justify-content:flex-end;flex-wrap:wrap;}
+.pg-info{font-size:9px;color:var(--muted);font-weight:600;margin-right:auto;}
+.pg-btn{padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--sub);font-size:9px;font-weight:700;cursor:pointer;transition:all 0.18s;}
+.pg-btn:hover:not(:disabled){border-color:var(--blue);color:var(--blue);}
+.pg-btn.on{background:var(--blue);border-color:var(--blue);color:#fff;}
+.pg-btn:disabled{opacity:0.3;cursor:not-allowed;}
+
+/* ── TOOLTIP ── */
+.hm-tip{position:fixed;background:rgba(0,0,0,0.9);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:9px;font-weight:600;pointer-events:none;z-index:500;display:none;}
+/* ── CUSTOM SELECT ── */
+.tag-sel{padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:9px;font-family:'Montserrat',sans-serif;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px;min-width:100px;}
+.tag-sel option{background:var(--surface2);color:var(--text);font-family:'Montserrat',sans-serif;}
+.tag-sel:focus{border-color:var(--blue);}
+/* ── DATE RANGE ── */
+.date-range-wrap{display:none;align-items:center;gap:6px;padding:5px 0;}
+.date-range-wrap.show{display:flex;}
+.date-inp{padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:9px;font-family:'Montserrat',sans-serif;outline:none;cursor:pointer;color-scheme:dark;}
+.date-inp:focus{border-color:var(--blue);}
+.date-lbl{font-size:8px;color:var(--muted);font-weight:700;}
+/* Fix KPI grid */
+.kpi-row{grid-auto-rows:auto;}
+
+/* ── CIERRE DE PERÍODO (C11) ── */
+#cierre-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+#cierre-card.hide{display:none;}
+.cierre-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.cierre-ttl{font-size:11px;font-weight:700;color:var(--text);}
+.cierre-sub{font-size:9px;color:var(--muted);font-weight:600;}
+.cierre-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);}
+.cc{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.cc-lbl{font-size:8px;font-weight:700;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+.cc-val{font-size:20px;font-weight:900;line-height:1;color:var(--text);margin-bottom:4px;}
+.cc-delta{font-size:9px;font-weight:700;}
+.cc-delta.up{color:var(--green);}
+.cc-delta.down{color:var(--red);}
+.cc-delta.flat{color:var(--muted);}
+@media(max-width:900px){.cierre-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.cierre-grid{grid-template-columns:1fr;}}
+
+
+/* ── FOOTER ── */
+.ftr{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:8px;color:var(--muted);font-weight:600;letter-spacing:0.05em;flex-wrap:wrap;gap:6px;}
+
+/* ── CHART INFO TOOLTIP ── */
+.ch{position:relative;}
+.ch-info{flex-shrink:0;width:16px;height:16px;border-radius:50%;border:1px solid var(--border);color:var(--muted);font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;transition:all 0.18s;margin-left:8px;position:relative;z-index:10;}
+.ch-info:hover{border-color:var(--blue);color:var(--blue);}
+.ch-info .ch-tip{position:absolute;top:22px;right:0;width:240px;background:rgba(0,0,0,0.97);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:9px;font-weight:500;line-height:1.55;color:var(--text);opacity:0;visibility:hidden;transition:opacity 0.18s;pointer-events:none;text-transform:none;letter-spacing:normal;text-align:left;z-index:200;}
+.ch-info:hover .ch-tip{opacity:1;visibility:visible;}
+
+/* ── KPI TOOLTIP ── */
+.kpi-info{position:absolute;top:12px;right:12px;width:14px;height:14px;border-radius:50%;border:1px solid var(--border);color:var(--muted);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:help;transition:all 0.18s;z-index:5;}
+.kpi-info:hover{border-color:var(--blue);color:var(--blue);}
+.kpi-info .kpi-tip{position:absolute;top:20px;right:0;width:200px;background:rgba(0,0,0,0.95);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:9px;font-weight:500;line-height:1.5;color:var(--text);opacity:0;visibility:hidden;transition:opacity 0.18s;pointer-events:none;text-transform:none;letter-spacing:normal;text-align:left;}
+.kpi-info:hover .kpi-tip{opacity:1;visibility:visible;}
+
+/* ── MAPA GEOGRÁFICO ── */
+.map-section{display:grid;grid-template-columns:2fr 1fr;gap:var(--gap);}
+#map-container{height:420px;border-radius:var(--r);overflow:hidden;background:var(--surface2);}
+.leaflet-container{background:#0a0a14!important;font-family:'Montserrat',sans-serif;}
+.leaflet-popup-content-wrapper{background:var(--surface)!important;color:var(--text)!important;border:1px solid var(--border);border-radius:8px;}
+.leaflet-popup-tip{background:var(--surface)!important;}
+.leaflet-popup-content{font-family:'Montserrat',sans-serif;font-size:11px;margin:8px 12px;}
+.map-toggle{display:flex;gap:4px;}
+.map-rank{max-height:420px;overflow-y:auto;}
+.map-rank-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+.map-rank-flag{font-size:13px;width:20px;text-align:center;flex-shrink:0;}
+.map-rank-name{font-size:10px;font-weight:600;flex:1;}
+.map-rank-bar-wrap{flex:1.5;background:rgba(255,255,255,0.04);border-radius:3px;height:6px;overflow:hidden;}
+.map-rank-bar{height:100%;border-radius:3px;background:var(--green);}
+.map-rank-val{font-size:9px;font-weight:700;color:var(--sub);width:54px;text-align:right;flex-shrink:0;}
+.map-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:11px;text-align:center;padding:20px;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1300px){.kpi-row{grid-template-columns:repeat(4,1fr);}.g4{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr);}.g2,.g3{grid-template-columns:1fr;}.dif-kpi-grid{grid-template-columns:repeat(2,1fr);}.map-section{grid-template-columns:1fr;}}
+@media(max-width:600px){.kpi-row{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Oasis Perfumes</div>
+    <div class="login-sub">CRM Dashboard</div>
+    <input class="login-input" id="lu" type="text" placeholder="Usuario" autocomplete="username">
+    <input class="login-input" id="lp" type="password" placeholder="Contraseña" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-err" id="lerr"></div>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="ld-ring"></div>
+  <div class="ld-txt">CARGANDO DATOS CRM</div>
+  <div class="ld-prog" id="ldp">Conectando...</div>
+</div>
+
+<div id="app" style="display:none">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-r1">
+    <div class="hdr-brand">
+      <div class="hdr-name">Oasis Perfumes</div>
+      <div class="hdr-sub2">CRM Analytics</div>
+    </div>
+    <div class="sep"></div>
+    <div class="pill-row" id="period-pills">
+      <button class="pill on" data-p="semana">Semana</button>
+      <button class="pill" data-p="hoy">Hoy</button>
+      <button class="pill" data-p="7d">7D</button>
+      <button class="pill" data-p="15d">15D</button>
+      <button class="pill" data-p="30d">30D</button>
+      <button class="pill" data-p="90d">90D</button>
+      <button class="pill" data-p="all">Todo</button>
+      <button class="pill" data-p="rango">📅 Rango</button>
+    </div>
+    <div class="date-range-wrap" id="date-range">
+      <span class="date-lbl">Desde:</span>
+      <input type="date" class="date-inp" id="d-from">
+      <span class="date-lbl">Hasta:</span>
+      <input type="date" class="date-inp" id="d-to">
+      <button class="pill" id="btn-apply-range" style="background:var(--blue);border-color:var(--blue);color:#fff;">Aplicar</button>
+    </div>
+    <div class="hdr-right">
+      <button class="pill" id="btn-export">📥 CSV</button>
+      <button class="pill" id="btn-refresh">↻</button>
+      <div class="dot-live"></div>
+      <span class="sync-info" id="sync-txt">—</span>
+      <div class="sep"></div>
+      <button class="pill" onclick="window.location.href='/ads.html'" style="background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);font-weight:700;letter-spacing:0.08em;">📊 PUBLICIDAD →</button>
+    </div>
+  </div>
+  <div class="hdr-r2">
+    <span class="emb-label">Embudo:</span>
+    <div class="pill-row" id="emb-pills">
+      <button class="pill emb on" data-e="">Todos</button>
+      <button class="pill emb" data-e="principal" style="--ec:#3B82F6">Principal</button>
+      <button class="pill emb" data-e="filtro-mayor" style="--ec:#6366F1">Filtro Mayor</button>
+      <button class="pill emb" data-e="estimate-cierre" style="--ec:#C9A84C">Estimate</button>
+      <button class="pill emb" data-e="logistica" style="--ec:#10B981">Logística</button>
+      <button class="pill emb" data-e="colombia" style="--ec:#A78BFA">Colombia</button>
+    </div>
+    <span class="emb-label" style="margin-left:8px;">Etiqueta:</span>
+    <select class="tag-sel" id="tag-sel"><option value="">Todas</option></select>
+    <span class="emb-label" style="margin-left:8px;">Etapa:</span>
+    <select class="tag-sel" id="etapa-sel"><option value="">Todas</option></select>
+  </div>
+</div>
+
+<!-- FILTER BADGES -->
+<div id="afbar"></div>
+
+<!-- PAGE -->
+<div class="page">
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-acc" style="background:var(--blue)"></div>
+      <div class="kpi-info">i<span class="kpi-tip">Leads únicos con cualquier movimiento de etapa en el período seleccionado. Cuenta cada lead una sola vez aunque tenga varias etapas.</span></div>
+      <div class="kpi-lbl">Leads Activos</div>
+      <div class="kpi-val" id="kv-act" style="color:var(--blue)">—</div>
+      <div class="kpi-txt">actividad en el período</div>
+      <div class="kpi-chg flat" id="kc-act">vs período anterior: —</div>
+      <div class="spark-wrap"><canvas id="sp-act"></canvas></div>
+    </div>
+    <div class="kpi"><div class="kpi-acc" style="background:var(--cyan)"></div>
+      <div class="kpi-info">i<span class="kpi-tip">Leads únicos que aparecen por primera vez en la etapa "leads_entrantes" durante el período seleccionado. Mide el flujo de entrada al CRM.</span></div>
+      <div class="kpi-lbl">Leads Nuevos</div>
+      <div class="kpi-val" id="kv-new" style="color:var(--cyan)">—</div>
+      <div class="kpi-txt" id="kt-new">etapa entrantes · período</div>
+      <div class="kpi-chg flat" id="kc-new">vs período anterior: —</div>
+    </div>
+    <div class="kpi"><div class="kpi-acc" style="background:var(--indigo)"></div>
+      <div class="kpi-info">i<span class="kpi-tip">El embudo con mayor cantidad de leads únicos activos en el período. Haz clic en el gráfico "Leads por Embudo" para filtrar el dashboard por ese embudo.</span></div>
+      <div class="kpi-lbl">Embudo Líder</div>
+      <div class="kpi-val" id="kv-emb" style="color:var(--indigo);font-size:16px;margin-top:4px;">—</div>
+      <div class="kpi-txt" id="kv-emb-n">más activo del período</div>
+      <div class="kpi-chg flat" id="kc-emb">—</div>
+    </div>
+    <div class="kpi"><div class="kpi-acc" style="background:var(--violet)"></div>
+      <div class="kpi-info">i<span class="kpi-tip">La etapa CRM con más leads únicos registrados en el período seleccionado, contando todos los embudos. Refleja dónde está concentrada la actividad.</span></div>
+      <div class="kpi-lbl">Etapa Más Activa</div>
+      <div class="kpi-val" id="kv-eta" style="color:var(--violet);font-size:13px;margin-top:4px;line-height:1.2;">—</div>
+      <div class="kpi-txt" id="kv-eta-n">leads en esta etapa</div>
+    </div>
+    <div class="kpi"><div class="kpi-acc" style="background:var(--amber)"></div>
+      <div class="kpi-info">i<span class="kpi-tip">Leads sin ningún movimiento de etapa en los últimos 15 días, que no están en una etapa final (despacho, orden o cancelado). Ayuda a detectar leads estancados que se perdieron en el proceso sin cierre formal.</span></div>
+      <div class="kpi-lbl">⏸️ Leads Stuck</div>
+      <div class="kpi-val" id="kv-stuck" style="color:var(--amber)">—</div>
+      <div class="kpi-txt">sin mov. +15 días</div>
+      <div class="kpi-chg flat" id="kc-stuck">no finalizados</div>
+    </div>
+    <div class="kpi" style="grid-column:span 2;"><div class="kpi-acc" style="background:var(--green)"></div>
+      <div class="kpi-info">i<span class="kpi-tip">Suma del presupuesto de los leads en etapa "orden recibida" (venta confirmada). El pendiente por cobrar y el cancelado se muestran aparte abajo.</span></div>
+      <div class="kpi-lbl">💰 Ventas Confirmadas</div>
+      <div class="kpi-val" id="kv-pres" style="color:var(--green)">—</div>
+      <div class="kpi-chg flat" id="kc-pres" style="margin-bottom:4px;">vs período anterior: —</div>
+      <div class="pres-row">
+        <div class="pres-item"><div class="pres-lbl" style="position:relative;cursor:help;" title="Suma de presupuesto_pendiente en las etapas de cobro. Es el dinero comprometido aún no cobrado.">⏳ Pendiente</div><div class="pres-val" id="kv-pend" style="color:var(--amber)">—</div></div>
+        <div class="pres-item"><div class="pres-lbl">❌ Cancelado</div><div class="pres-val" id="kv-canc" style="color:var(--red)">—</div></div>
+        <div class="pres-item"><div class="pres-lbl">🎫 Ticket prom.</div><div class="pres-val" id="kv-prom" style="color:var(--sub)">—</div></div>
+        <div class="pres-item"><div class="pres-lbl">🎯 Meta (entrantes)</div><div class="pres-val" id="kv-meta" style="color:var(--gold)">—%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CIERRE DE PERÍODO (C11) -->
+  <div id="cierre-card" class="hide">
+    <div class="cierre-hdr">
+      <span class="cierre-ttl" id="cierre-ttl">📊 Cierre del Período</span>
+      <span class="cierre-sub" id="cierre-sub">vs período anterior</span>
+      <span class="ch-info" style="margin-left:auto;">i<span class="ch-tip">Resumen ejecutivo de los KPIs clave del período seleccionado, comparados con el período anterior de igual duración. Se adapta automáticamente al filtro de tiempo. No aparece en el filtro "Todo" (no hay período anterior con qué comparar).</span></span>
+    </div>
+    <div class="cierre-grid">
+      <div class="cc"><div class="cc-lbl">Leads Nuevos</div><div class="cc-val" id="cc-new">—</div><div class="cc-delta flat" id="cc-new-d">—</div></div>
+      <div class="cc"><div class="cc-lbl">Revenue</div><div class="cc-val" id="cc-rev">—</div><div class="cc-delta flat" id="cc-rev-d">—</div></div>
+      <div class="cc"><div class="cc-lbl">Tasa de Conversión</div><div class="cc-val" id="cc-conv">—</div><div class="cc-delta flat" id="cc-conv-d">—</div></div>
+      <div class="cc"><div class="cc-lbl">Leads Activos</div><div class="cc-val" id="cc-act">—</div><div class="cc-delta flat" id="cc-act-d">—</div></div>
+      <div class="cc"><div class="cc-lbl">Ticket Promedio</div><div class="cc-val" id="cc-tick">—</div><div class="cc-delta flat" id="cc-tick-d">—</div></div>
+      <div class="cc"><div class="cc-lbl">Canal #1</div><div class="cc-val" id="cc-canal" style="font-size:14px;margin-top:5px;">—</div><div class="cc-delta flat" id="cc-canal-d">—</div></div>
+    </div>
+  </div>
+
+  <!-- FILA 2: Trend + Etiquetas -->
+  <div class="g2">
+    <div class="card" id="c-trend">
+      <div class="ch"><span class="ct">📈 Leads por Día · Últimos 15 días</span><span class="cb" style="background:rgba(59,130,246,0.1);color:var(--blue)">TREND</span><span class="ch-info">i<span class="ch-tip">Leads únicos por día en los últimos 15 días, separado por embudo. Ventana fija de 15 días para mantener contexto de tendencia. Respeta filtros de embudo y etiqueta. Clic en una línea para filtrar por ese embudo.</span></span></div>
+      <div style="position:relative;height:220px"><canvas id="ch-trend"></canvas></div>
+    </div>
+    <div class="card" id="c-tags">
+      <div class="ch"><span class="ct">📡 Top Canales</span><span class="cb" style="background:rgba(201,168,76,0.1);color:var(--gold)">CANALES</span><span class="ch-info">i<span class="ch-tip">Distribución de leads únicos por canal de adquisición detectado desde etiquetas de Kommo (INSTAGRAM, TIKTOK, WEBSITE). Usa el canal histórico del lead aunque la etiqueta se haya borrado en etapas posteriores. Sin canal = leads sin etiqueta de canal (mayoristas B2B).</span></span></div>
+      <div style="position:relative;height:220px"><canvas id="ch-tags"></canvas></div>
+    </div>
+  </div>
+
+  <!-- FILA 3: Heatmap + Gauge -->
+  <div class="g2">
+    <div class="card" id="c-hm">
+      <div class="ch"><span class="ct">🕐 Actividad · Día × Hora</span><span class="cb" style="background:rgba(16,185,129,0.1);color:var(--green)">HEATMAP</span><span class="ch-info">i<span class="ch-tip">Mapa de calor de actividad CRM por día de la semana y hora del día (zona horaria Colombia, UTC-5). Celdas más brillantes = más eventos. Útil para identificar horarios de mayor movimiento.</span></span></div>
+      <div class="hm-wrap"><canvas id="ch-hm" height="154"></canvas></div>
+    </div>
+    <div class="card" id="c-gauge">
+      <div class="ch"><span class="ct">🎯 Meta Semanal · 1,000 Leads</span><span class="ch-info" style="margin-left:auto;">i<span class="ch-tip">Progreso hacia 1,000 leads nuevos (etapa "leads_entrantes") en la semana actual (lunes a domingo, hora Colombia). La meta es fija e independiente del filtro de período. Sem. anterior se muestra de referencia.</span></span></div>
+      <div class="gauge-wrap">
+        <canvas id="ch-gauge" width="200" height="160" style="max-height:160px;max-width:220px;"></canvas>
+        <div class="gauge-info">
+          <div class="g-pct" id="g-pct">—%</div>
+          <div class="g-sub" id="g-sub">— / 1,000 leads esta semana</div>
+          <div class="kpi-chg flat" id="g-ant" style="margin-top:6px;text-align:center;">sem. ant: —</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILA 4: Tendencia Etapa + Embudo día -->
+  <div class="g2">
+    <div class="card" id="c-etapa">
+      <div class="ch"><span class="ct">📊 Tendencia por Etapa · 15 días</span><span class="cb" style="background:rgba(167,139,250,0.1);color:var(--violet)">SLIDING</span><span class="ch-info">i<span class="ch-tip">Evolución diaria de las etapas clave del funnel en los últimos 15 días (ventana fija). Permite ver qué etapas crecen o caen. Clic en una línea para filtrar el dashboard por esa etapa.</span></span></div>
+      <div style="position:relative;height:200px"><canvas id="ch-etapa"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">🔵 Composición por Embudo · 15 días</span><span class="cb" style="background:rgba(99,102,241,0.1);color:var(--indigo)">STACKED</span><span class="ch-info">i<span class="ch-tip">Distribución de leads por embudo día a día en los últimos 15 días, en barras apiladas (ventana fija). Muestra cómo cambia el mix de embudos en el tiempo.</span></span></div>
+      <div style="position:relative;height:200px"><canvas id="ch-embdia"></canvas></div>
+    </div>
+  </div>
+
+  <!-- FILA 5: Embudo + Fuente (Revenue) -->
+  <div class="g2">
+    <div class="card" id="c-hbar">
+      <div class="ch"><span class="ct">📦 Leads por Embudo</span><span class="cb" style="background:rgba(59,130,246,0.1);color:var(--blue)">PERÍODO</span><span class="ch-info">i<span class="ch-tip">Leads únicos por embudo en el período seleccionado. Permite comparar el volumen de cada embudo. Clic en una barra para filtrar todo el dashboard por ese embudo.</span></span></div>
+      <div style="position:relative;height:200px"><canvas id="ch-hbar"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">💰 Revenue por Canal</span><span class="cb" style="background:rgba(16,185,129,0.1);color:var(--green)">VENTAS</span><span class="ch-info">i<span class="ch-tip">Ingresos de ventas confirmadas (orden_recibida) agrupados por canal de adquisición, usando el canal histórico del lead. B2B / Mayorista = ventas sin canal de pauta digital (es el grueso del negocio, no es dato faltante). El revenue de difusión se muestra aparte en el panel de Difusión.</span></span></div>
+      <div style="position:relative;height:200px"><canvas id="ch-rev"></canvas></div>
+    </div>
+  </div>
+
+  <!-- FILA 6: Proceso Estimate (full width) -->
+  <div class="card">
+    <div class="ch">
+      <span class="ct">📋 Proceso Estimate · Actividad por Etapa</span>
+      <span class="cb" style="background:rgba(201,168,76,0.1);color:var(--gold)">ESTIMATE</span>
+      <span class="ch-info">i<span class="ch-tip">Leads únicos que han pasado por cada etapa del proceso Estimate/Cierre. El proceso no es lineal — un lead puede tocar múltiples etapas, por eso los números NO se suman. Siempre muestra datos históricos del embudo Estimate.</span></span>
+    </div>
+    <div class="est-grid" id="est-grid">
+      <div style="color:var(--muted);font-size:10px;text-align:center;padding:20px;">Cargando datos de Estimate...</div>
+    </div>
+  </div>
+
+  <!-- FILA 7: Difusión -->
+  <div style="font-size:8px;font-weight:700;color:var(--muted);letter-spacing:0.25em;text-transform:uppercase;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    📢 Análisis de Difusión
+    <span class="ch-info" style="margin-left:0;font-size:9px;width:15px;height:15px;">i<span class="ch-tip" style="top:18px;">Análisis de campañas de mensajes masivos (difusión). Respeta el filtro de período del dashboard (Hoy, Semana, etc.) y se puede segmentar por embudo con las pestañas. Alcanzados: recibieron mensaje. Respondieron: mostraron interés (interesado_promo). Conversión: llegaron a orden recibida. Revenue: ventas de leads que pasaron por difusión (informativo, no se resta de Ventas Confirmadas).</span></span>
+    <div class="pill-row" id="dif-emb-pills" style="margin-left:auto;">
+      <button class="pill on" data-de="" style="font-size:8px;">Todos</button>
+      <button class="pill" data-de="filtro-mayor" style="font-size:8px;">Filtro Mayor</button>
+      <button class="pill" data-de="estimate-cierre" style="font-size:8px;">Estimate</button>
+    </div>
+  </div>
+  <div class="dif-kpi-grid">
+    <div class="dif-kpi"><div class="dif-lbl">Leads Alcanzados</div><div class="dif-val" id="dif-tot" style="color:var(--rose)">—</div><div class="dif-sub">recibieron mensaje</div></div>
+    <div class="dif-kpi"><div class="dif-lbl">Respondieron</div><div class="dif-val" id="dif-resp" style="color:var(--violet)">—</div><div class="dif-sub" id="dif-resp-p">—</div></div>
+    <div class="dif-kpi"><div class="dif-lbl">No Respondieron</div><div class="dif-val" id="dif-no" style="color:var(--muted)">—</div><div class="dif-sub" id="dif-no-p">—</div></div>
+    <div class="dif-kpi"><div class="dif-lbl">Conversión a Venta</div><div class="dif-val" id="dif-conv" style="color:var(--green)">—</div><div class="dif-sub" id="dif-conv-p">—</div></div>
+    <div class="dif-kpi"><div class="dif-lbl">💰 Revenue Difusión</div><div class="dif-val" id="dif-rev" style="color:var(--gold)">—</div><div class="dif-sub">informativo · no resta ventas</div></div>
+    <div class="card" style="padding:12px 14px;">
+      <div class="ch" style="margin-bottom:8px;"><span style="font-size:9px;font-weight:700;color:var(--text)">Tendencia difusión · 15d</span></div>
+      <div style="position:relative;height:80px"><canvas id="ch-dif"></canvas></div>
+    </div>
+  </div>
+
+  <!-- FILA 8: Mapa Geográfico -->
+  <div style="font-size:8px;font-weight:700;color:var(--muted);letter-spacing:0.25em;text-transform:uppercase;display:flex;align-items:center;gap:8px;">
+    🌎 Distribución Geográfica · País de Origen del Pedido
+    <span class="ch-info" style="margin-left:0;font-size:9px;width:15px;height:15px;">i<span class="ch-tip" style="top:18px;">País de origen del cliente, detectado automáticamente desde las etiquetas de Kommo (ej: "COLOMBIA", "MEXICO"). Modo Leads: leads únicos con actividad. Modo Revenue: ventas confirmadas. Se actualiza con los filtros activos del dashboard.</span></span>
+  </div>
+  <div class="map-section">
+    <div class="card" style="padding:14px 16px;">
+      <div class="ch">
+        <span class="ct">🗺️ Mapa de Ventas por País</span>
+        <div class="map-toggle" style="margin-left:auto;">
+          <button class="pill on" id="map-mode-leads" data-m="leads" style="font-size:8px;">Leads</button>
+          <button class="pill" id="map-mode-rev" data-m="rev" style="font-size:8px;">Revenue</button>
+        </div>
+      </div>
+      <div id="map-container"></div>
+    </div>
+    <div class="card" style="padding:14px 16px;">
+      <div class="ch"><span class="ct">📊 Ranking por País</span><span class="cb" style="background:rgba(16,185,129,0.1);color:var(--green)" id="map-rank-mode">LEADS</span></div>
+      <div class="map-rank" id="map-rank"></div>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="card">
+    <div class="tbl-hdr">
+      <div class="tbl-ttl">📋 Todos los Leads</div>
+      <div class="tbl-cnt" id="tbl-cnt">—</div>
+      <div class="tbl-ctrls">
+        <input class="tbl-search" id="tbl-q" placeholder="Buscar nombre, etapa, asesor...">
+        <select class="pg-sel" id="pg-size"><option value="20">20/pág</option><option value="50">50/pág</option><option value="100">100/pág</option></select>
+        <button class="pill" id="btn-reset-f" style="font-size:8px;">✕ Quitar filtros</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th data-c="counted_at">Fecha ↕</th>
+          <th data-c="lead_name">Lead</th>
+          <th data-c="embudo">Embudo</th>
+          <th data-c="etapa">Etapa</th>
+          <th data-c="estado">Estado</th>
+          <th data-c="canal_adquisicion">Canal</th>
+          <th data-c="fuente">Fuente</th>
+          <th data-c="responsable">Asesor</th>
+          <th data-c="presupuesto">Presupuesto</th>
+          <th data-c="ciclo">Ciclo</th>
+          <th data-c="total_facturado">Total Facturado</th>
+        </tr></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+    <div class="pg">
+      <div class="pg-info" id="pg-info">—</div>
+      <button class="pg-btn" id="pg-prev" disabled>‹</button>
+      <div id="pg-nums" style="display:flex;gap:3px"></div>
+      <button class="pg-btn" id="pg-next" disabled>›</button>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<div class="ftr">
+  <span>Oasis Perfumes · CRM Dashboard v5.2</span>
+  <span>America/Bogotá · UTC-5</span>
+  <span id="ftr-total">—</span>
+</div>
+
+</div><!-- /app -->
+<div class="hm-tip" id="hm-tip"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
+const SB_URL='https://smufcsbhfzmauwngaglb.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWZjc2JoZnptYXV3bmdhZ2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5OTE4NTMsImV4cCI6MjA3NDU2Nzg1M30.ZNLlyErkDOzI3c9a0HW5CSf5Dy334eBbTW8DFkwyt6Q';
+const META_SEM=1000;
+
+const EC={principal:'#3B82F6','filtro-mayor':'#6366F1','estimate-cierre':'#C9A84C',logistica:'#10B981',colombia:'#A78BFA'};
+const EL={principal:'Principal','filtro-mayor':'Filtro Mayor','estimate-cierre':'Estimate/Cierre',logistica:'Logística',colombia:'Colombia'};
+const EB={principal:'b-blue','filtro-mayor':'b-indigo','estimate-cierre':'b-gold',logistica:'b-green',colombia:'b-violet'};
+const CANAL_C={INSTAGRAM:'#E1306C',TIKTOK:'#69C9D0',WEBSITE:'#3B82F6'};
+const PAL=['#3B82F6','#6366F1','#10B981','#C9A84C','#A78BFA','#F472B6','#F59E0B','#06B6D4','#8B5CF6','#F97316','#EC4899','#14B8A6'];
+
+const EST_ORDER=['crear_estimate','estimate_enviado','estimate_otra_respuesta','estimate_necesita_cambio','estimate_confirmado','so_pago_pendiente','so_pick_sin_pagar','so_cancelada'];
+const EST_LBL={'crear_estimate':'Crear Estimate','estimate_enviado':'Estimate Enviado','estimate_otra_respuesta':'Otra Respuesta','estimate_necesita_cambio':'Necesita Cambio','estimate_confirmado':'Confirmado','so_pago_pendiente':'SO Pago Pendiente','so_pick_sin_pagar':'SO Pick Sin Pagar','so_cancelada':'SO Cancelada'};
+const EST_COL={'crear_estimate':'#3B82F6','estimate_enviado':'#06B6D4','estimate_otra_respuesta':'#A78BFA','estimate_necesita_cambio':'#F59E0B','estimate_confirmado':'#10B981','so_pago_pendiente':'#F59E0B','so_pick_sin_pagar':'#F97316','so_cancelada':'#F87171'};
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const S={
+  all:[],charts:{},sparks:{},difusionIds:new Set(),canalMap:{},totalFacturado:{},mapMode:'leads',leafletMap:null,mapLayer:null,
+  F:{period:'semana',embudo:null,tag:null,etapa:null,from:null,to:null},
+  difF:{embudo:null},
+  tbl:{page:0,ps:20,q:'',sort:{col:'counted_at',asc:false},data:[]}
+};
+
+// ═══════════════════════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// UTILS — definir $ primero para que esté disponible en todo
+// ═══════════════════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+const ldp=t=>$('ldp').textContent=t;
+
+function doLogin(){
+  const u=$('lu').value.trim();
+  const p=$('lp').value;
+  if(u==='Kommo-dashboard' && p==='Acceso_Oasisn8n'){
+    localStorage.setItem('oas_auth','1');
+    $('login-screen').style.display='none';
+    startApp();
+  } else {
+    const err=$('lerr');
+    err.textContent='❌ Usuario o contraseña incorrectos';
+    err.style.fontSize='12px';
+    err.style.padding='8px';
+    err.style.background='rgba(248,113,113,0.15)';
+    err.style.borderRadius='6px';
+    err.style.marginTop='8px';
+    $('lu').style.borderColor='var(--red)';
+    $('lp').style.borderColor='var(--red)';
+  }
+}
+$('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+$('lu').addEventListener('input',()=>{$('lerr').textContent='';$('lu').style.borderColor='';$('lp').style.borderColor='';});
+
+if(localStorage.getItem('oas_auth')==='1'){
+  $('login-screen').style.display='none';
+  startApp();
+}
+const fmtM=v=>{if(!v||+v===0)return'—';return`$${Math.round(+v).toLocaleString('en-US')}`;};
+const fmtN=v=>{if(v>=1e6)return`${(v/1e6).toFixed(1)}M`;if(v>=1e3)return`${(v/1e3).toFixed(0)}K`;return String(Math.round(v));};
+const fmtDT=s=>{const d=new Date(s);return d.toLocaleString('es-CO',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'America/Bogota'});};
+const uniq=rows=>new Set(rows.map(r=>r.lead_id)).size;
+const dc=id=>{if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];}};
+const dsp=id=>{if(S.sparks[id]){S.sparks[id].destroy();delete S.sparks[id];}};
+
+// Zona horaria COL (UTC-5)
+function getLunesColUTC(){
+  const nowUTC=new Date();
+  const nowCOL=new Date(nowUTC.getTime()-5*3600000);
+  const day=nowCOL.getUTCDay();
+  const diff=day===0?-6:1-day;
+  const lunes=new Date(nowCOL);
+  lunes.setUTCDate(lunes.getUTCDate()+diff);
+  lunes.setUTCHours(0,0,0,0);
+  return new Date(lunes.getTime()+5*3600000);
+}
+function getHoyColUTC(){
+  const nowUTC=new Date();
+  const nowCOL=new Date(nowUTC.getTime()-5*3600000);
+  const hoy=new Date(nowCOL);
+  hoy.setUTCHours(0,0,0,0);
+  return new Date(hoy.getTime()+5*3600000);
+}
+function getPeriodStart(p){
+  if(p==='rango'&&S.F.from)return new Date(S.F.from+'T00:00:00-05:00');
+  const now=new Date();
+  if(p==='semana')return getLunesColUTC();
+  if(p==='hoy')return getHoyColUTC();
+  if(p==='7d'){const d=new Date(now);d.setDate(d.getDate()-7);return d;}
+  if(p==='15d'){const d=new Date(now);d.setDate(d.getDate()-15);return d;}
+  if(p==='30d'){const d=new Date(now);d.setDate(d.getDate()-30);return d;}
+  if(p==='90d'){const d=new Date(now);d.setDate(d.getDate()-90);return d;}
+  return new Date(0);
+}
+function getPeriodEnd(p){
+  if(p==='rango'&&S.F.to)return new Date(S.F.to+'T23:59:59-05:00');
+  return new Date(9999,0,1);
+}
+function getPrevStart(p){
+  const s=getPeriodStart(p);
+  if(p==='all')return new Date(0);
+  if(p==='semana'){const d=new Date(s);d.setDate(d.getDate()-7);return d;}
+  if(p==='hoy'){const d=new Date(s);d.setDate(d.getDate()-1);return d;}
+  const span=new Date()-s;
+  return new Date(s.getTime()-span);
+}
+function getLast15(){
+  const days=[],nowCOL=new Date(new Date().getTime()-5*3600000);
+  for(let i=14;i>=0;i--){const d=new Date(nowCOL);d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  return days;
+}
+function localDateStr(iso){
+  const d=new Date(iso);
+  return new Date(d.getTime()-5*3600000).toISOString().slice(0,10);
+}
+function localHour(iso){return new Date(new Date(iso).getTime()-5*3600000).getUTCHours();}
+function localDOW(iso){return new Date(new Date(iso).getTime()-5*3600000).getUTCDay();}
+
+// ═══════════════════════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════════════════════
+async function sbGet(path){
+  const r=await fetch(`${SB_URL}/rest/v1/${path}`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`}});
+  if(!r.ok)throw new Error(`${r.status}`);
+  return r.json();
+}
+async function loadAll(){
+  const sel='lead_id,counted_at,embudo,etapa,presupuesto,presupuesto_pendiente,presupuesto_cancelado,tags,responsable,canal_adquisicion,fuente,pais_lead,lead_name,contact_name,ciclo';
+  const f=`order=counted_at.desc`;
+  let all=[],off=0,lim=1000,more=true;
+  while(more){
+    ldp(`Cargando... ${all.length} registros`);
+    const b=await sbGet(`kommo_leads_eventos?select=${sel}&${f}&limit=${lim}&offset=${off}`);
+    all=[...all,...b];more=b.length===lim;off+=lim;
+  }
+  // Safety net: normalizar embudo duplicado (el SQL ya lo hizo, esto es defensa extra)
+  all=all.map(r=>r.embudo==='filtro-por-mayor'?{...r,embudo:'filtro-mayor'}:r);
+  return all;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FILTRADO
+// ═══════════════════════════════════════════════════════════════
+function filtered(){
+  const start=getPeriodStart(S.F.period);
+  const end=getPeriodEnd(S.F.period);
+  return S.all.filter(r=>{
+    const d=new Date(r.counted_at);
+    if(d<start||d>end)return false;
+    if(S.F.embudo&&r.embudo!==S.F.embudo)return false;
+    if(S.F.tag&&!(r.tags&&r.tags.toUpperCase().split(',').map(t=>t.trim()).includes(S.F.tag)))return false;
+    if(S.F.etapa&&r.etapa!==S.F.etapa)return false;
+    return true;
+  });
+}
+function prevPeriod(){
+  const ps=getPrevStart(S.F.period),pe=getPeriodStart(S.F.period);
+  return S.all.filter(r=>{
+    const d=new Date(r.counted_at);
+    if(d<ps||d>=pe)return false;
+    if(S.F.embudo&&r.embudo!==S.F.embudo)return false;
+    if(S.F.tag&&!(r.tags&&r.tags.toUpperCase().split(',').map(t=>t.trim()).includes(S.F.tag)))return false;
+    return true;
+  });
+}
+
+function xf(key,val){
+  S.F[key]=val;
+  renderBadges();
+  renderAll();
+}
+function clearF(key){S.F[key]=null;renderBadges();renderAll();}
+function clearAll(){S.F={period:S.F.period,embudo:null,tag:null,etapa:null};renderBadges();renderAll();}
+
+function renderBadges(){
+  const bar=$('afbar');bar.innerHTML='';
+  const defs=[
+    {k:'embudo',l:'Embudo',v:S.F.embudo?EL[S.F.embudo]||S.F.embudo:null},
+    {k:'tag',l:'Etiqueta',v:S.F.tag},
+    {k:'etapa',l:'Etapa',v:S.F.etapa},
+  ];
+  defs.forEach(d=>{if(!d.v)return;const b=document.createElement('div');b.className='fbadge';b.innerHTML=`<span>${d.l}: <strong>${d.v}</strong></span><span class="x" onclick="clearF('${d.k}')">✕</span>`;bar.appendChild(b);});
+  bar.classList.toggle('has-f',bar.children.length>0);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KPIs
+// ═══════════════════════════════════════════════════════════════
+function renderKPIs(f){
+  // Leads activos
+  const nAct=uniq(f);
+  const prev=prevPeriod();const nPrev=uniq(prev);
+  const pct=nPrev?((nAct-nPrev)/nPrev*100):0;
+  $('kv-act').textContent=fmtN(nAct);
+  const cc=$('kc-act');
+  if(!nPrev){cc.textContent='vs período anterior: sin datos';cc.className='kpi-chg flat';}
+  else{const s=pct>=0?'↑':'↓';cc.textContent=`${s} ${Math.abs(pct).toFixed(1)}% vs anterior (${fmtN(nPrev)})`;cc.className=`kpi-chg ${pct>=0?'up':'down'}`;}
+
+  // Leads nuevos (entrantes)
+  const fNew=f.filter(r=>r.etapa==='leads_entrantes');
+  const nNew=uniq(fNew);
+  const hoyStart=getHoyColUTC();
+  const fNewHoy=fNew.filter(r=>new Date(r.counted_at)>=hoyStart);
+  $('kv-new').textContent=fmtN(nNew);
+  $('kt-new').textContent=`entrantes · hoy: ${uniq(fNewHoy)}`;
+  // C12 — delta de leads nuevos vs período anterior
+  const prevNew=prev.filter(r=>r.etapa==='leads_entrantes');
+  const nPrevNew=uniq(prevNew);
+  const ccNew=$('kc-new');
+  if(!nPrevNew){ccNew.textContent='vs período anterior: sin datos';ccNew.className='kpi-chg flat';}
+  else{const pn=(nNew-nPrevNew)/nPrevNew*100;const s=pn>=0?'↑':'↓';ccNew.textContent=`${s} ${Math.abs(pn).toFixed(1)}% vs anterior (${fmtN(nPrevNew)})`;ccNew.className=`kpi-chg ${pn>=0?'up':'down'}`;}
+
+  // Embudo líder
+  const ec={};f.forEach(r=>{if(!ec[r.embudo])ec[r.embudo]=new Set();ec[r.embudo].add(r.lead_id);});
+  const top=Object.entries(ec).sort((a,b)=>b[1].size-a[1].size)[0];
+  if(top){$('kv-emb').textContent=EL[top[0]]||top[0];$('kv-emb-n').textContent=`${fmtN(top[1].size)} leads`;$('kc-emb').textContent=`${Math.round(top[1].size/nAct*100)}% del período`;}
+
+  // Etapa más activa
+  const etapaC={};f.forEach(r=>{if(!etapaC[r.etapa])etapaC[r.etapa]=new Set();etapaC[r.etapa].add(r.lead_id);});
+  const topE=Object.entries(etapaC).sort((a,b)=>b[1].size-a[1].size)[0];
+  if(topE){$('kv-eta').textContent=topE[0].replace(/_/g,' ');$('kv-eta-n').textContent=`${fmtN(topE[1].size)} leads`;}
+
+  // Presupuesto
+  const ords=f.filter(r=>r.etapa==='orden_recibida');
+  const conf=ords.reduce((s,r)=>s+(+r.presupuesto||0),0);
+  const pend=f.reduce((s,r)=>s+(+r.presupuesto_pendiente||0),0);
+  const canc=f.reduce((s,r)=>s+(+r.presupuesto_cancelado||0),0);
+  const prom=ords.length?conf/ords.length:0;
+  $('kv-pres').textContent=fmtM(conf);
+  $('kv-pend').textContent=fmtM(pend);
+  $('kv-canc').textContent=fmtM(canc);
+  $('kv-prom').textContent=fmtM(prom);
+  // C13 — delta de revenue vs período anterior
+  const prevOrds=prev.filter(r=>r.etapa==='orden_recibida');
+  const prevConf=prevOrds.reduce((s,r)=>s+(+r.presupuesto||0),0);
+  const ccPres=$('kc-pres');
+  if(!prevConf){ccPres.textContent='vs período anterior: sin datos';ccPres.className='kpi-chg flat';ccPres.style.marginBottom='4px';}
+  else{const pp=(conf-prevConf)/prevConf*100;const s=pp>=0?'↑':'↓';ccPres.textContent=`${s} ${Math.abs(pp).toFixed(1)}% vs anterior (${fmtM(prevConf)})`;ccPres.className=`kpi-chg ${pp>=0?'up':'down'}`;ccPres.style.marginBottom='4px';}
+
+  // Meta semanal (basada en leads NUEVOS - entrantes - esta semana)
+  const semStart=getLunesColUTC();
+  const entrantesData=S.all.filter(r=>{
+    if(new Date(r.counted_at)<semStart)return false;
+    if(r.etapa!=='leads_entrantes')return false;
+    if(S.F.embudo&&r.embudo!==S.F.embudo)return false;
+    return true;
+  });
+  const nSemEntrant=uniq(entrantesData);
+  const metaPct=Math.round(nSemEntrant/META_SEM*100);
+  $('kv-meta').textContent=`${metaPct}%`;
+  const nSem=nSemEntrant; // para el gauge
+
+  // Gauge
+  renderGauge(nSem,nPrev);
+
+  // C7 — Leads Stuck: leads cuyo último movimiento fue hace +15 días y no están en etapa final.
+  // Es un estado ACTUAL del lead (no depende del filtro de período), pero sí respeta el filtro de embudo.
+  const STUCK_DIAS=15;
+  const ETAPAS_FINALES=new Set(['despacho_exitoso','orden_recibida','so_cancelada','no_respondio_difusion','conversacion_finalizada']);
+  const corteStuck=new Date(Date.now()-STUCK_DIAS*86400000);
+  const ultimoMov={}; // lead_id -> {fecha, etapa}
+  S.all.forEach(r=>{
+    if(S.F.embudo&&r.embudo!==S.F.embudo)return;
+    const d=new Date(r.counted_at);
+    if(!ultimoMov[r.lead_id]||d>ultimoMov[r.lead_id].fecha)ultimoMov[r.lead_id]={fecha:d,etapa:r.etapa};
+  });
+  let nStuck=0;
+  Object.values(ultimoMov).forEach(m=>{
+    if(m.fecha<corteStuck&&!ETAPAS_FINALES.has(m.etapa))nStuck++;
+  });
+  $('kv-stuck').textContent=fmtN(nStuck);
+
+  // Sparkline leads activos
+  renderSpark('sp-act',f,'#3B82F6');
+}
+
+function renderSpark(id,data,color){
+  dsp(id);const canvas=$(id);if(!canvas)return;
+  const days=getLast15();
+  const bk={};days.forEach(d=>bk[d]=new Set());
+  data.forEach(r=>{const ds=localDateStr(r.counted_at);if(ds in bk)bk[ds].add(r.lead_id);});
+  const vals=Object.values(bk).map(s=>s.size);
+  const ctx=canvas.getContext('2d');
+  S.sparks[id]=new Chart(ctx,{type:'line',data:{labels:days,datasets:[{data:vals,borderColor:color,borderWidth:1.5,fill:true,backgroundColor:color+'22',tension:0.4,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false,beginAtZero:true}}}});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GAUGE
+// ═══════════════════════════════════════════════════════════════
+function renderGauge(nSem,nPrevSem){
+  dc('gauge');
+  // nSem aquí = leads entrantes de la semana
+  const pct=Math.min(nSem/META_SEM,1);
+  let col='#3B82F6';
+  if(pct>=1)col='#10B981';else if(pct>=0.8)col='#C9A84C';else if(pct<0.4)col='#F87171';
+  const ctx=$('ch-gauge').getContext('2d');
+  S.charts.gauge=new Chart(ctx,{type:'doughnut',data:{datasets:[{data:[nSem,Math.max(0,META_SEM-nSem)],backgroundColor:[col,'rgba(255,255,255,0.04)'],borderWidth:0,cutout:'76%',rotation:-110,circumference:220}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+  $('g-pct').textContent=`${Math.round(pct*100)}%`;$('g-pct').style.color=col;
+  $('g-sub').textContent=`${fmtN(nSem)} leads nuevos esta semana`;
+  const ls=getLunesColUTC();const prevLun=new Date(ls);prevLun.setDate(prevLun.getDate()-7);
+  const prevSemData=S.all.filter(r=>{const d=new Date(r.counted_at);return d>=prevLun&&d<ls&&r.etapa==='leads_entrantes';});
+  const nPS=uniq(prevSemData);
+  $('g-ant').textContent=`sem. anterior: ${fmtN(nPS)} leads (${Math.round(nPS/META_SEM*100)}%)`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TREND 15d
+// ═══════════════════════════════════════════════════════════════
+function renderTrend(){
+  dc('tr');
+  const days=getLast15(),embs=Object.keys(EL);
+  const dm={};
+  S.all.forEach(r=>{
+    const ds=localDateStr(r.counted_at);if(!days.includes(ds))return;
+    if(S.F.embudo&&r.embudo!==S.F.embudo)return;
+    if(S.F.tag&&!(r.tags&&r.tags.toUpperCase().split(',').map(t=>t.trim()).includes(S.F.tag)))return;
+    if(!dm[ds])dm[ds]={};if(!dm[ds][r.embudo])dm[ds][r.embudo]=new Set();
+    dm[ds][r.embudo].add(r.lead_id);
+  });
+  const datasets=embs.map(e=>({label:EL[e],data:days.map(d=>dm[d]?.[e]?.size||0),borderColor:EC[e],backgroundColor:EC[e]+'22',borderWidth:2,fill:true,tension:0.3,pointRadius:3,pointHoverRadius:6}));
+  const ctx=$('ch-trend').getContext('2d');
+  S.charts.tr=new Chart(ctx,{type:'line',data:{labels:days.map(d=>{const[,m,dy]=d.split('-');return`${dy}/${m}`;}),datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#666',font:{size:9,family:'Montserrat'},boxWidth:9}},tooltip:{mode:'index',intersect:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#555',font:{size:8}}},y:{stacked:false,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:8}},beginAtZero:true}},onClick:(e,els)=>{if(!els.length)return;xf('embudo',embs[els[0].datasetIndex]);}}});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOP CANALES (donut) — canal_adquisicion + DIFUSION inferido
+// ═══════════════════════════════════════════════════════════════
+function renderTags(f){
+  dc('tg');
+  // Conteo de leads únicos por canal (canal_adquisicion + fallback canalMap histórico)
+  // C4: Difusión NO es canal de adquisición — se excluye de este gráfico.
+  // C17: si el registro no trae canal, se usa el canal histórico del lead (primer tag visto).
+  var canalLeads={INSTAGRAM:new Set(),TIKTOK:new Set(),WEBSITE:new Set()};
+  var sinCanal=new Set();
+  var seen=new Set();
+  f.forEach(function(r){
+    if(seen.has(r.lead_id))return; // un lead cuenta una sola vez
+    var canal=r.canal_adquisicion;
+    if(!canal && S.canalMap)canal=S.canalMap[r.lead_id]; // fallback histórico
+    if(canal && canalLeads[canal]){canalLeads[canal].add(r.lead_id);seen.add(r.lead_id);}
+    else{sinCanal.add(r.lead_id);}
+  });
+  var data=[
+    {l:'Instagram',n:canalLeads.INSTAGRAM.size,c:'#E1306C'},
+    {l:'TikTok',n:canalLeads.TIKTOK.size,c:'#69C9D0'},
+    {l:'Website',n:canalLeads.WEBSITE.size,c:'#3B82F6'},
+    {l:'Sin canal',n:sinCanal.size,c:'#444455'}
+  ].filter(function(d){return d.n>0;});
+  if(!data.length)return;
+  var total=data.reduce(function(s,d){return s+d.n;},0);
+  var ctx=$('ch-tags').getContext('2d');
+  S.charts.tg=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:data.map(function(d){return d.l;}),
+      datasets:[{
+        data:data.map(function(d){return d.n;}),
+        backgroundColor:data.map(function(d){return d.c+'CC';}),
+        borderColor:data.map(function(d){return d.c;}),
+        borderWidth:1.5
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'58%',
+      plugins:{
+        legend:{position:'right',labels:{color:'#999',font:{size:9,family:'Montserrat'},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:function(c){
+          return ' '+c.label+': '+c.raw.toLocaleString()+' leads ('+(c.raw/total*100).toFixed(1)+'%)';
+        }}}
+      }
+    }
+  });
+}
+// ═══════════════════════════════════════════════════════════════
+// HEATMAP 7×24
+// ═══════════════════════════════════════════════════════════════
+function renderHeatmap(f){
+  const DAYS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const canvas=$('ch-hm'),ctx=canvas.getContext('2d');
+  const mx=Array.from({length:7},()=>Array(24).fill(0));
+  f.forEach(r=>{mx[localDOW(r.counted_at)][localHour(r.counted_at)]++;});
+  const maxV=Math.max(1,...mx.flat());
+  const cW=Math.floor((canvas.parentElement.clientWidth-42)/24),cH=20,pL=34,pT=18;
+  canvas.width=pL+24*cW;canvas.height=pT+7*cH+12;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.font='8px Montserrat';ctx.fillStyle='#444';ctx.textAlign='right';
+  DAYS.forEach((d,i)=>ctx.fillText(d,pL-3,pT+i*cH+cH/2+3));
+  ctx.textAlign='center';
+  for(let h=0;h<24;h+=3)ctx.fillText(`${h}h`,pL+h*cW+cW,pT-3);
+  for(let d=0;d<7;d++)for(let h=0;h<24;h++){
+    const v=mx[d][h],t=v/maxV;
+    const r2=Math.round(59+t*(248-59)),g2=Math.round(130+t*(113-130)),b2=Math.round(246+t*(73-246));
+    ctx.fillStyle=v===0?'rgba(255,255,255,0.03)':`rgba(${r2},${g2},${b2},${0.25+t*0.75})`;
+    ctx.beginPath();ctx.roundRect(pL+h*cW+1,pT+d*cH+1,cW-2,cH-2,2);ctx.fill();
+    if(v>0&&cW>16){ctx.font='7px Montserrat';ctx.fillStyle=t>0.5?'#fff':'#666';ctx.textAlign='center';ctx.fillText(v,pL+h*cW+cW/2,pT+d*cH+cH/2+3);}
+  }
+  const tip=$('hm-tip');
+  canvas.onmousemove=e=>{const r=canvas.getBoundingClientRect();const h=Math.floor((e.clientX-r.left-pL)/cW),d=Math.floor((e.clientY-r.top-pT)/cH);if(h>=0&&h<24&&d>=0&&d<7){tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY-28)+'px';tip.textContent=`${DAYS[d]} ${h}:00h — ${mx[d][h]} leads`;}else tip.style.display='none';};
+  canvas.onmouseleave=()=>tip.style.display='none';
+  canvas.onclick=e=>{const r=canvas.getBoundingClientRect();const h=Math.floor((e.clientX-r.left-pL)/cW);if(h>=0&&h<24)console.log('hour filter:',h);};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TENDENCIA ETAPA 15d
+// ═══════════════════════════════════════════════════════════════
+function renderEtapaTrend(){
+  dc('et');
+  const days=getLast15();
+  const ets=['leads_entrantes','contacto_inicial','crear_estimate','estimate_enviado','estimate_confirmado','so_pago_pendiente','orden_recibida','so_cancelada'];
+  const ec2=['#3B82F6','#6366F1','#C9A84C','#06B6D4','#10B981','#F59E0B','#10B981','#F87171'];
+  const el2={leads_entrantes:'Entrantes',contacto_inicial:'Contacto',crear_estimate:'Estimate',estimate_enviado:'Est.Enviado',estimate_confirmado:'Confirmado',so_pago_pendiente:'SO Pendiente',orden_recibida:'Orden',so_cancelada:'Cancelada'};
+  const dm={};
+  S.all.forEach(r=>{const ds=localDateStr(r.counted_at);if(!days.includes(ds)||!ets.includes(r.etapa))return;if(S.F.embudo&&r.embudo!==S.F.embudo)return;if(!dm[ds])dm[ds]={};if(!dm[ds][r.etapa])dm[ds][r.etapa]=new Set();dm[ds][r.etapa].add(r.lead_id);});
+  const datasets=ets.map((e,i)=>({label:el2[e],data:days.map(d=>dm[d]?.[e]?.size||0),borderColor:ec2[i],backgroundColor:'transparent',borderWidth:1.5,tension:0.3,pointRadius:2,pointHoverRadius:5}));
+  const ctx=$('ch-etapa').getContext('2d');
+  S.charts.et=new Chart(ctx,{type:'line',data:{labels:days.map(d=>{const[,m,dy]=d.split('-');return`${dy}/${m}`;}),datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#666',font:{size:8,family:'Montserrat'},boxWidth:8}},tooltip:{mode:'index',intersect:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#555',font:{size:8}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:8}},beginAtZero:true}},onClick:(e,els)=>{if(!els.length)return;xf('etapa',ets[els[0].datasetIndex]);}}});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EMBUDO DÍA STACKED
+// ═══════════════════════════════════════════════════════════════
+function renderEmbDia(){
+  dc('ed');const days=getLast15(),embs=Object.keys(EL);
+  const dm={};
+  S.all.forEach(r=>{const ds=localDateStr(r.counted_at);if(!days.includes(ds))return;if(S.F.embudo&&r.embudo!==S.F.embudo)return;if(!dm[ds])dm[ds]={};if(!dm[ds][r.embudo])dm[ds][r.embudo]=new Set();dm[ds][r.embudo].add(r.lead_id);});
+  const datasets=embs.map(e=>({label:EL[e],data:days.map(d=>dm[d]?.[e]?.size||0),backgroundColor:EC[e]+'BB',borderColor:EC[e],borderWidth:1,borderRadius:3}));
+  const ctx=$('ch-embdia').getContext('2d');
+  S.charts.ed=new Chart(ctx,{type:'bar',data:{labels:days.map(d=>{const[,m,dy]=d.split('-');return`${dy}/${m}`;}),datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#666',font:{size:9,family:'Montserrat'},boxWidth:8}},tooltip:{mode:'index',intersect:false}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#555',font:{size:8}}},y:{stacked:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:8}},beginAtZero:true}}}});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEADS POR EMBUDO
+// ═══════════════════════════════════════════════════════════════
+function renderHbar(f){
+  dc('hb');
+  const embs=Object.keys(EL);
+  const counts={};
+  f.forEach(function(r){
+    if(!counts[r.embudo])counts[r.embudo]=new Set();
+    counts[r.embudo].add(r.lead_id);
+  });
+  const sorted=embs.map(function(e){
+    return {l:EL[e],n:counts[e]?counts[e].size:0,c:EC[e]||'#888',k:e};
+  }).sort(function(a,b){return b.n-a.n;});
+  const ctx=$('ch-hbar').getContext('2d');
+  S.charts.hb=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:sorted.map(function(i){return i.l;}),
+      datasets:[{
+        data:sorted.map(function(i){return i.n;}),
+        backgroundColor:sorted.map(function(i){return i.c+'55';}),
+        borderColor:sorted.map(function(i){return i.c;}),
+        borderWidth:2,borderRadius:6,borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){return ' '+c.raw.toLocaleString()+' leads únicos';}}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#555',font:{size:8}},beginAtZero:true},
+        y:{grid:{display:false},ticks:{color:'#aaa',font:{size:10}}}
+      },
+      onClick:function(e,els){
+        if(!els.length)return;
+        var s=sorted[els[0].index];
+        if(s)xf('embudo',s.k);
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REVENUE POR CANAL — canal_adquisicion + DIFUSION inferido
+// ═══════════════════════════════════════════════════════════════
+function renderRev(f){
+  dc('rv');
+  const ventas=f.filter(r=>r.etapa==='orden_recibida'&&r.presupuesto);
+  // C5: Difusión NO se atribuye como canal de revenue. C17: fallback a canal histórico.
+  const CMAP={INSTAGRAM:{l:'Instagram',c:'#E1306C'},TIKTOK:{l:'TikTok',c:'#69C9D0'},WEBSITE:{l:'Website',c:'#3B82F6'}};
+  const counts={};
+  ventas.forEach(r=>{
+    let canal=r.canal_adquisicion;
+    if(!canal && S.canalMap)canal=S.canalMap[r.lead_id]; // fallback histórico
+    const key=canal&&CMAP[canal]?canal:'SIN';
+    if(!counts[key])counts[key]={rev:0,n:0};
+    counts[key].rev+=+r.presupuesto;counts[key].n++;
+  });
+  const sorted=Object.entries(counts).map(([k,v])=>({
+    l:k==='SIN'?'B2B / Mayorista':CMAP[k].l, // BUG-2: "Sin canal" → B2B / Mayorista (no es dato faltante, es el modelo de negocio)
+    c:k==='SIN'?'#5A5A6E':CMAP[k].c,
+    rev:v.rev,n:v.n
+  })).filter(i=>i.rev>0).sort((a,b)=>b.rev-a.rev);
+  if(!sorted.length)return;
+  const revTotal=sorted.reduce((s,i)=>s+i.rev,0); // C6: para % del total en tooltip
+  const ctx=$('ch-rev').getContext('2d');
+  S.charts.rv=new Chart(ctx,{type:'bar',data:{labels:sorted.map(i=>i.l),datasets:[{data:sorted.map(i=>i.rev),backgroundColor:sorted.map(i=>i.c+'99'),borderColor:sorted.map(i=>i.c),borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const item=sorted[c.dataIndex];const pct=revTotal?(c.raw/revTotal*100).toFixed(1):0;return` ${fmtM(c.raw)} · ${item.n} órdenes · prom ${fmtM(c.raw/item.n)} · ${pct}% del total`;}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#555',font:{size:8},callback:v=>fmtM(v)},beginAtZero:true},y:{grid:{display:false},ticks:{color:'#aaa',font:{size:10}}}}}});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROCESO ESTIMATE
+// ═══════════════════════════════════════════════════════════════
+function renderEstimate(){
+  // Guard: si hay filtro de embudo activo y no es estimate-cierre, ocultar sección
+  if(S.F.embudo&&S.F.embudo!=='estimate-cierre'){
+    $('est-grid').innerHTML='<div style="color:var(--muted);font-size:10px;padding:16px;text-align:center;">Esta sección aplica solo al embudo Estimate/Cierre — quita el filtro de embudo para verla</div>';
+    return;
+  }
+  const est=S.all.filter(r=>r.embudo==='estimate-cierre'&&EST_ORDER.includes(r.etapa));
+  const byEtapa={};
+  est.forEach(r=>{if(!byEtapa[r.etapa])byEtapa[r.etapa]={leads:new Set(),pres:0,pend:0,canc:0};byEtapa[r.etapa].leads.add(r.lead_id);byEtapa[r.etapa].pres+=+r.presupuesto||0;byEtapa[r.etapa].pend+=+r.presupuesto_pendiente||0;byEtapa[r.etapa].canc+=+r.presupuesto_cancelado||0;});
+  const maxN=Math.max(1,...Object.values(byEtapa).map(v=>v.leads.size));
+  const html=EST_ORDER.map(et=>{
+    const d=byEtapa[et]||{leads:new Set(),pres:0,pend:0,canc:0};
+    const n=d.leads.size,pct=Math.round(n/maxN*100);
+    const col=EST_COL[et];
+    let meta='';
+    if(d.pend>0)meta+=`⏳ ${fmtM(d.pend)} pendiente`;
+    if(d.canc>0)meta+=`${meta?' · ':''}❌ ${fmtM(d.canc)} cancelado`;
+    if(d.pres>0&&!d.pend&&!d.canc)meta+=`$${fmtM(d.pres)}`;
+    return `<div class="est-row">
+      <div class="est-lbl">${EST_LBL[et]}</div>
+      <div class="est-bar-wrap">
+        <div class="est-bar" style="width:${pct}%;background:${col}99;border:1px solid ${col};">
+          <span class="est-bar-txt">${n} leads</span>
+        </div>
+      </div>
+      <div class="est-meta">${meta}</div>
+    </div>`;
+  }).join('');
+  $('est-grid').innerHTML=html||'<div style="color:var(--muted);font-size:10px;padding:16px;text-align:center;">Sin datos de Estimate en los últimos 90 días</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DIFUSIÓN
+// ═══════════════════════════════════════════════════════════════
+function renderDifusion(){
+  dc('df');
+  const all=S.all;
+  // D-NEW2: respeta el período global del dashboard (sobre el registro de difusión = cuándo se alcanzó el lead)
+  const pStart=getPeriodStart(S.F.period),pEnd=getPeriodEnd(S.F.period);
+  // D-NEW3: filtro de embudo propio de la sección (independiente del filtro global de embudo)
+  const de=S.difF.embudo; // '', 'filtro-mayor' o 'estimate-cierre'
+  const inEmb=r=>!de||r.embudo===de;
+  const inPeriod=r=>{const d=new Date(r.counted_at);return d>=pStart&&d<=pEnd;};
+  // BUG-1: ya no se filtra por embudo==='estimate-cierre'. Alcanzados = etapa difusion en período + embudo seleccionado
+  const dif=all.filter(r=>r.etapa==='difusion'&&inEmb(r)&&inPeriod(r));
+  const difIds=new Set(dif.map(r=>r.lead_id));
+  const intIds=new Set(all.filter(r=>r.etapa==='interesado_promo').map(r=>r.lead_id));
+  const ordIds=new Set(all.filter(r=>r.etapa==='orden_recibida').map(r=>r.lead_id));
+  // respondieron = alcanzados que mostraron interés; convirtieron = alcanzados que llegaron a orden
+  const tot=difIds.size,resp=[...difIds].filter(id=>intIds.has(id)).length,noResp=Math.max(0,tot-resp),conv=[...difIds].filter(id=>ordIds.has(id)).length;
+  const rp=tot?(resp/tot*100).toFixed(1):0,np=tot?(noResp/tot*100).toFixed(1):0,cp=tot?(conv/tot*100).toFixed(1):0;
+  // D-NEW1: revenue de leads de difusión que convirtieron (informativo, NO se resta de Ventas Confirmadas)
+  let difRev=0;
+  difIds.forEach(id=>{if(S.totalFacturado&&S.totalFacturado[id])difRev+=S.totalFacturado[id];});
+  $('dif-tot').textContent=fmtN(tot);
+  $('dif-resp').textContent=fmtN(resp);$('dif-resp-p').textContent=`${rp}% tasa respuesta`;
+  $('dif-no').textContent=fmtN(noResp);$('dif-no-p').textContent=`${np}% sin respuesta`;
+  $('dif-conv').textContent=fmtN(conv);$('dif-conv-p').textContent=`${cp}% → orden recibida`;
+  $('dif-rev').textContent=fmtM(difRev);
+  // Tendencia 15d: difusión por día (respeta embudo seleccionado, ventana fija 15d independiente del período)
+  const days=getLast15(),dm={};
+  all.filter(r=>r.etapa==='difusion'&&inEmb(r)).forEach(r=>{const ds=localDateStr(r.counted_at);if(!dm[ds])dm[ds]=new Set();dm[ds].add(r.lead_id);});
+  const ctx=$('ch-dif').getContext('2d');
+  S.charts.df=new Chart(ctx,{type:'line',data:{labels:days.map(d=>{const[,m,dy]=d.split('-');return`${dy}/${m}`;}),datasets:[{data:days.map(d=>dm[d]?.size||0),borderColor:'#F472B6',backgroundColor:'#F472B622',borderWidth:1.5,fill:true,tension:0.4,pointRadius:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},scales:{x:{grid:{display:false},ticks:{color:'#555',font:{size:7}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#555',font:{size:7}},beginAtZero:true}}}});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAPA GEOGRÁFICO — país de origen inferido de tags + pais_lead
+// ═══════════════════════════════════════════════════════════════
+const COUNTRY_KW={
+  'Colombia':['COLOMBIA'],'México':['MEXICO','MÉXICO'],'Venezuela':['VENEZUELA'],
+  'Ecuador':['ECUADOR'],'Guatemala':['GUATEMALA'],'Honduras':['HONDURAS'],
+  'Puerto Rico':['PUERTO RICO'],'República Dom.':['REPUBLICA DOM','REPÚBLICA DOM','DOMINICANA'],
+  'USA':['USA','EEUU','ESTADOS UNIDOS'],'Chile':['CHILE'],'Perú':['PERU','PERÚ'],
+  'Bolivia':['BOLIVIA'],'Argentina':['ARGENTINA'],'Costa Rica':['COSTA RICA'],
+  'Panamá':['PANAMA','PANAMÁ'],'El Salvador':['EL SALVADOR','SALVADOR'],
+  'Nicaragua':['NICARAGUA'],'Paraguay':['PARAGUAY'],'Uruguay':['URUGUAY'],
+  'Cuba':['CUBA'],'Brasil':['BRASIL'],'Canadá':['CANADA'],'Surinam':['SURINAME'],
+  'Trinidad y Tobago':['TRINIDAD Y TOBAGO'],'Guyana':['GUYANA'],'España':['ESPAÑA'],
+  'Emiratos Árabes':['EMIRATOS ARABES']
+};
+const COUNTRY_GEO={
+  'Colombia':[4.57,-74.30,'🇨🇴'],'México':[23.63,-102.55,'🇲🇽'],'Venezuela':[6.42,-66.59,'🇻🇪'],
+  'Ecuador':[-1.83,-78.18,'🇪🇨'],'Guatemala':[15.78,-90.23,'🇬🇹'],'Honduras':[15.20,-86.24,'🇭🇳'],
+  'Puerto Rico':[18.22,-66.59,'🇵🇷'],'República Dom.':[18.74,-70.16,'🇩🇴'],'USA':[37.09,-95.71,'🇺🇸'],
+  'Chile':[-35.68,-71.54,'🇨🇱'],'Perú':[-9.19,-75.02,'🇵🇪'],'Bolivia':[-16.29,-63.59,'🇧🇴'],
+  'Argentina':[-38.42,-63.62,'🇦🇷'],'Costa Rica':[9.75,-83.75,'🇨🇷'],'Panamá':[8.54,-80.78,'🇵🇦'],
+  'El Salvador':[13.79,-88.90,'🇸🇻'],'Nicaragua':[12.87,-85.21,'🇳🇮'],'Paraguay':[-23.44,-58.44,'🇵🇾'],
+  'Uruguay':[-32.52,-55.77,'🇺🇾'],'Cuba':[21.52,-77.78,'🇨🇺'],'Brasil':[-14.24,-51.93,'🇧🇷'],
+  'Canadá':[56.13,-106.35,'🇨🇦'],'Surinam':[3.92,-56.03,'🇸🇷'],'Trinidad y Tobago':[10.69,-61.22,'🇹🇹'],
+  'Guyana':[4.86,-58.93,'🇬🇾'],'España':[40.46,-3.75,'🇪🇸'],'Emiratos Árabes':[23.42,53.85,'🇦🇪']
+};
+function inferCountry(r){
+  // 1ro: campo pais_lead
+  if(r.pais_lead&&String(r.pais_lead).trim()){
+    const p=String(r.pais_lead).trim().toUpperCase();
+    for(const[country,kws]of Object.entries(COUNTRY_KW)){
+      for(const kw of kws){if(p.includes(kw))return country;}
+    }
+  }
+  // 2do: keywords en tags
+  if(r.tags){
+    const t=r.tags.toUpperCase();
+    for(const[country,kws]of Object.entries(COUNTRY_KW)){
+      for(const kw of kws){if(t.includes(kw))return country;}
+    }
+  }
+  return null;
+}
+
+function renderMapa(f){
+  const mode=S.mapMode||'leads';
+  // Construir datos por país (leads únicos + revenue)
+  const byCountry={};
+  const seen={};
+  f.forEach(r=>{
+    const c=inferCountry(r);if(!c)return;
+    if(!byCountry[c])byCountry[c]={leads:new Set(),rev:0};
+    byCountry[c].leads.add(r.lead_id);
+    if(r.etapa==='orden_recibida'&&r.presupuesto)byCountry[c].rev+=+r.presupuesto;
+  });
+  const entries=Object.entries(byCountry).map(([c,v])=>({c,leads:v.leads.size,rev:v.rev}))
+    .filter(e=>COUNTRY_GEO[e.c]);
+  // Inicializar mapa una sola vez
+  if(!S.leafletMap){
+    if(typeof L==='undefined')return;
+    S.leafletMap=L.map('map-container',{zoomControl:true,attributionControl:false,scrollWheelZoom:false}).setView([8,-75],2.5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:10,minZoom:2}).addTo(S.leafletMap);
+    S.mapLayer=L.layerGroup().addTo(S.leafletMap);
+  }
+  // Limpiar markers anteriores (sin destruir el mapa base)
+  S.mapLayer.clearLayers();
+  const maxVal=Math.max(1,...entries.map(e=>mode==='rev'?e.rev:e.leads));
+  entries.forEach(e=>{
+    const geo=COUNTRY_GEO[e.c];
+    const val=mode==='rev'?e.rev:e.leads;
+    if(val<=0)return;
+    const radius=16+Math.sqrt(val/maxVal)*36;
+    const col=mode==='rev'?'#10B981':'#3B82F6';
+    const circle=L.circleMarker([geo[0],geo[1]],{
+      radius:radius,fillColor:col,fillOpacity:0.70,color:col,weight:1.5,opacity:0.9
+    });
+    circle.bindPopup(`<strong>${geo[2]} ${e.c}</strong><br>${e.leads.toLocaleString()} leads<br>${fmtM(e.rev)} revenue`);
+    circle.addTo(S.mapLayer);
+  });
+  // Ranking lateral
+  const sorted=entries.sort((a,b)=>(mode==='rev'?b.rev-a.rev:b.leads-a.leads));
+  const maxRank=Math.max(1,...sorted.map(e=>mode==='rev'?e.rev:e.leads));
+  const rankEl=$('map-rank');
+  if(!sorted.length){
+    rankEl.innerHTML='<div class="map-empty">Sin datos geográficos para este filtro.<br>El país se infiere de las etiquetas del lead.</div>';
+  }else{
+    rankEl.innerHTML=sorted.map(e=>{
+      const geo=COUNTRY_GEO[e.c];const val=mode==='rev'?e.rev:e.leads;
+      const pct=Math.round(val/maxRank*100);
+      const valTxt=mode==='rev'?fmtM(e.rev):e.leads.toLocaleString();
+      const barCol=mode==='rev'?'var(--green)':'var(--blue)';
+      return`<div class="map-rank-row">
+        <span class="map-rank-flag">${geo[2]}</span>
+        <span class="map-rank-name">${e.c}</span>
+        <span class="map-rank-bar-wrap"><span class="map-rank-bar" style="width:${pct}%;background:${barCol}"></span></span>
+        <span class="map-rank-val">${valTxt}</span>
+      </div>`;
+    }).join('');
+  }
+  $('map-rank-mode').textContent=mode==='rev'?'REVENUE':'LEADS';
+  // Recalcular tamaño del mapa (Leaflet necesita esto cuando el contenedor cambió)
+  setTimeout(()=>{if(S.leafletMap)S.leafletMap.invalidateSize();},100);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ESTADO DEL PRESUPUESTO (badge para tabla)
+// ═══════════════════════════════════════════════════════════════
+function getEstadoPresupuesto(r){
+  const e=r.etapa||'';
+  let badge='';
+  if(e==='orden_recibida')badge='<span class="bdg b-green">✅ PAGADO</span>';
+  else if(e==='so_pago_pendiente'||e==='so_pick_sin_pagar')badge='<span class="bdg b-gold">⏳ PENDIENTE</span>';
+  else if(e==='despacho_exitoso')badge='<span class="bdg b-blue">🚚 COMPLETADO</span>';
+  else if(e==='so_cancelada')badge='<span class="bdg b-rose">❌ CANCELADO</span>';
+  else if(e.indexOf('estimate')>=0||e==='crear_estimate')badge='<span class="bdg b-violet">📋 PRESUPUESTO</span>';
+  else badge='<span style="color:#333;font-size:9px">—</span>';
+  return badge;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLA
+// ═══════════════════════════════════════════════════════════════
+function renderTable(){
+  const q=S.tbl.q.toLowerCase();
+  let data=filtered();
+  if(q)data=data.filter(r=>(r.lead_name||'').toLowerCase().includes(q)||(r.etapa||'').toLowerCase().includes(q)||(r.embudo||'').toLowerCase().includes(q)||(r.responsable||'').toLowerCase().includes(q)||(r.fuente||'').toLowerCase().includes(q)||(r.canal_adquisicion||'').toLowerCase().includes(q));
+  const{col,asc}=S.tbl.sort;
+  const numCols={presupuesto:1,ciclo:1,total_facturado:1};
+  const getVal=(r,c)=>{
+    if(c==='total_facturado')return (S.totalFacturado&&S.totalFacturado[r.lead_id])||0;
+    if(numCols[c])return +r[c]||0;
+    return r[c];
+  };
+  if(numCols[col]){
+    data.sort((a,b)=>{const va=getVal(a,col),vb=getVal(b,col);return asc?va-vb:vb-va;});
+  }else{
+    data.sort((a,b)=>asc?String(a[col]||'').localeCompare(String(b[col]||'')):String(b[col]||'').localeCompare(String(a[col]||'')));
+  }
+  S.tbl.data=data;
+  const tot=data.length,ps=S.tbl.ps,maxPg=Math.max(0,Math.ceil(tot/ps)-1);
+  S.tbl.page=Math.min(S.tbl.page,maxPg);
+  const slice=data.slice(S.tbl.page*ps,(S.tbl.page+1)*ps);
+  const s=S.tbl.page*ps+1,e=Math.min((S.tbl.page+1)*ps,tot);
+  $('tbl-cnt').textContent=`${tot.toLocaleString()} registros`;
+  $('pg-info').textContent=tot>0?`Mostrando ${s}–${e} de ${tot.toLocaleString()}`:'Sin resultados';
+  const CC2={INSTAGRAM:'#E1306C',TIKTOK:'#69C9D0',WEBSITE:'#3B82F6'};
+  $('tbl-body').innerHTML=slice.map(r=>{
+    const bc=EB[r.embudo]||'b-blue';
+    // Canal: canal_adquisicion, con fallback al canal histórico del lead (C17)
+    let canalShow=r.canal_adquisicion;
+    if(!canalShow && S.canalMap)canalShow=S.canalMap[r.lead_id];
+    const CC3={INSTAGRAM:'#E1306C',TIKTOK:'#69C9D0',WEBSITE:'#3B82F6'};
+    const ccol=canalShow?CC3[canalShow]||'#888':null;
+    // C2: ciclo · C3: total facturado histórico del lead
+    const cicloShow=(r.ciclo&&+r.ciclo>0)?`#${r.ciclo}`:'—';
+    const totFact=S.totalFacturado&&S.totalFacturado[r.lead_id]?S.totalFacturado[r.lead_id]:0;
+    return`<tr>
+      <td style="white-space:nowrap;color:var(--muted);font-size:9px">${fmtDT(r.counted_at)}</td>
+      <td style="font-weight:600;font-size:10px">${r.lead_name||r.contact_name||'—'}</td>
+      <td><span class="bdg ${bc}">${EL[r.embudo]||r.embudo}</span></td>
+      <td style="color:var(--muted);font-size:9px">${r.etapa||'—'}</td>
+      <td>${getEstadoPresupuesto(r)}</td>
+      <td>${canalShow?`<span style="color:${ccol};font-weight:700;font-size:9px">● ${canalShow}</span>`:'<span style="color:#333">—</span>'}</td>
+      <td style="color:var(--sub);font-size:9px">${r.fuente||'—'}</td>
+      <td style="color:var(--sub);font-size:9px">${r.responsable||'—'}</td>
+      <td style="font-weight:700;font-size:9px;color:${r.presupuesto?'var(--green)':'#333'}">${r.presupuesto?fmtM(+r.presupuesto):'—'}</td>
+      <td style="font-weight:700;font-size:9px;color:${(r.ciclo&&+r.ciclo>1)?'var(--amber)':'var(--sub)'}">${cicloShow}</td>
+      <td style="font-weight:700;font-size:9px;color:${totFact>0?'var(--gold)':'#333'}">${totFact>0?fmtM(totFact):'—'}</td>
+    </tr>`;
+  }).join('');
+  $('pg-prev').disabled=S.tbl.page===0;
+  $('pg-next').disabled=S.tbl.page>=maxPg;
+  const pages=[],rng=2,p=S.tbl.page;
+  for(let i=0;i<=maxPg;i++){if(i===0||i===maxPg||(i>=p-rng&&i<=p+rng))pages.push(i);else if(pages[pages.length-1]!=='…')pages.push('…');}
+  $('pg-nums').innerHTML=pages.map(i=>i==='…'?`<span style="color:#444;padding:2px">…</span>`:`<button class="pg-btn ${i===p?'on':''}" onclick="S.tbl.page=${i};renderTable()">${i+1}</button>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CIERRE DE PERÍODO (C11)
+// ═══════════════════════════════════════════════════════════════
+const CIERRE_LBL={
+  semana:['📊 Cierre Semanal','vs semana anterior'],
+  hoy:['📊 Cierre Diario','vs ayer'],
+  '7d':['📊 Resumen 7 Días','vs 7 días previos'],
+  '15d':['📊 Resumen 15 Días','vs 15 días previos'],
+  '30d':['📊 Cierre Mensual','vs 30 días previos'],
+  '90d':['📊 Resumen Trimestral','vs 90 días previos'],
+  rango:['📊 Resumen del Período','vs período previo igual']
+};
+function setCierreCell(idVal,idDelta,curr,prev,tipo){
+  const fmt=v=>tipo==='$'?fmtM(v):tipo==='%'?(v.toFixed(1)+'%'):fmtN(v);
+  $(idVal).textContent=fmt(curr);
+  const el=$(idDelta);
+  if(prev===null||prev===undefined||prev===0){
+    el.textContent='sin dato anterior';el.className='cc-delta flat';return;
+  }
+  const delta=tipo==='%'?(curr-prev):((curr-prev)/prev*100);
+  const arrow=delta>=0?'↑':'↓';
+  const cls=delta>=0?'up':'down';
+  if(tipo==='%'){
+    el.textContent=`${arrow} ${Math.abs(delta).toFixed(1)}pp (${prev.toFixed(1)}%)`;
+  }else{
+    el.textContent=`${arrow} ${Math.abs(delta).toFixed(1)}% (${fmt(prev)})`;
+  }
+  el.className=`cc-delta ${cls}`;
+}
+function renderCierre(f){
+  const card=$('cierre-card');
+  // En filtro "Todo" no hay período anterior: ocultar
+  if(S.F.period==='all'){card.classList.add('hide');return;}
+  card.classList.remove('hide');
+  const prev=prevPeriod();
+  const lbls=CIERRE_LBL[S.F.period]||['📊 Resumen del Período','vs período anterior'];
+  $('cierre-ttl').textContent=lbls[0];
+  $('cierre-sub').textContent=lbls[1];
+  // 1. Leads Nuevos
+  const newCurr=uniq(f.filter(r=>r.etapa==='leads_entrantes'));
+  const newPrev=uniq(prev.filter(r=>r.etapa==='leads_entrantes'));
+  setCierreCell('cc-new','cc-new-d',newCurr,newPrev,'n');
+  // 2. Revenue
+  const ordCurr=f.filter(r=>r.etapa==='orden_recibida');
+  const ordPrev=prev.filter(r=>r.etapa==='orden_recibida');
+  const revCurr=ordCurr.reduce((s,r)=>s+(+r.presupuesto||0),0);
+  const revPrev=ordPrev.reduce((s,r)=>s+(+r.presupuesto||0),0);
+  setCierreCell('cc-rev','cc-rev-d',revCurr,revPrev,'$');
+  // 3. Tasa de Conversión (órdenes / leads nuevos)
+  const convCurr=newCurr?(uniq(ordCurr)/newCurr*100):0;
+  const convPrev=newPrev?(uniq(ordPrev)/newPrev*100):0;
+  setCierreCell('cc-conv','cc-conv-d',convCurr,newPrev?convPrev:null,'%');
+  // 4. Leads Activos
+  setCierreCell('cc-act','cc-act-d',uniq(f),uniq(prev),'n');
+  // 5. Ticket Promedio
+  const tickCurr=ordCurr.length?revCurr/ordCurr.length:0;
+  const tickPrev=ordPrev.length?revPrev/ordPrev.length:0;
+  setCierreCell('cc-tick','cc-tick-d',tickCurr,ordPrev.length?tickPrev:null,'$');
+  // 6. Canal #1 (usando canal histórico) — comparativa cualitativa
+  const canalTop=fp=>{
+    const c={};const seen=new Set();
+    fp.forEach(r=>{
+      if(seen.has(r.lead_id))return;
+      let canal=r.canal_adquisicion;if(!canal&&S.canalMap)canal=S.canalMap[r.lead_id];
+      if(canal){c[canal]=(c[canal]||0)+1;seen.add(r.lead_id);}
+    });
+    const top=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];
+    return top?top[0]:null;
+  };
+  const canalCurr=canalTop(f),canalPrev=canalTop(prev);
+  const CL={INSTAGRAM:'Instagram',TIKTOK:'TikTok',WEBSITE:'Website'};
+  $('cc-canal').textContent=canalCurr?(CL[canalCurr]||canalCurr):'—';
+  const ccCanalD=$('cc-canal-d');
+  if(canalPrev&&canalPrev!==canalCurr){ccCanalD.textContent=`antes: ${CL[canalPrev]||canalPrev}`;ccCanalD.className='cc-delta flat';}
+  else if(canalCurr){ccCanalD.textContent='se mantiene';ccCanalD.className='cc-delta flat';}
+  else{ccCanalD.textContent='sin datos';ccCanalD.className='cc-delta flat';}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════════════════
+function renderAll(){
+  const f=filtered();
+  renderKPIs(f);
+  renderCierre(f);
+  renderTrend();
+  renderTags(f);
+  renderHeatmap(f);
+  renderEtapaTrend();
+  renderEmbDia();
+  renderHbar(f);
+  renderRev(f);
+  renderEstimate();
+  renderDifusion();
+  renderMapa(f);
+  S.tbl.page=0;renderTable();
+  const now=new Date();
+  $('sync-txt').textContent=now.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',timeZone:'America/Bogota'});
+  $('ftr-total').textContent=`${S.all.length.toLocaleString()} registros totales`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FILTROS - SELECTORES
+// ═══════════════════════════════════════════════════════════════
+function buildSelectors(){
+  // Tag selector: parsear el campo tags (CSV) de todos los registros, top 60 por frecuencia
+  const tagCounts={};
+  S.all.forEach(r=>{
+    if(!r.tags)return;
+    r.tags.toUpperCase().split(',').forEach(t=>{
+      t=t.trim();
+      if(t&&t.length>1)tagCounts[t]=(tagCounts[t]||0)+1;
+    });
+  });
+  const tags=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,60).map(e=>e[0]);
+  const tagSel=$('tag-sel');
+  tags.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;tagSel.appendChild(o);});
+
+  const etapas=[...new Set(S.all.map(r=>r.etapa).filter(Boolean))].sort();
+  const etaSel=$('etapa-sel');
+  etapas.forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e.replace(/_/g,' ');etaSel.appendChild(o);});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENTOS
+// ═══════════════════════════════════════════════════════════════
+function setupEvents(){
+  // Período
+  document.querySelectorAll('#period-pills .pill').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('#period-pills .pill').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');S.F.period=btn.dataset.p;S.tbl.page=0;renderAll();
+  }));
+
+  // Embudo
+  document.querySelectorAll('#emb-pills .pill').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('#emb-pills .pill').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    S.F.embudo=btn.dataset.e||null;renderBadges();renderAll();
+  }));
+
+  // D-NEW3 — Mini-pills de embudo de la sección Difusión (independientes del filtro global)
+  document.querySelectorAll('#dif-emb-pills .pill').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('#dif-emb-pills .pill').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    S.difF.embudo=btn.dataset.de||null;renderDifusion();
+  }));
+
+  // Tag selector
+  $('tag-sel').addEventListener('change',e=>{S.F.tag=e.target.value||null;renderBadges();renderAll();});
+  $('etapa-sel').addEventListener('change',e=>{S.F.etapa=e.target.value||null;renderBadges();renderAll();});
+
+  // Refresh
+  $('btn-refresh').addEventListener('click',()=>{$('loader').style.display='flex';$('app').style.display='none';startApp();});
+
+  // Export CSV
+  $('btn-export').addEventListener('click',()=>{
+    const data=S.tbl.data.length?S.tbl.data:filtered();
+    const cols=['lead_id','counted_at','lead_name','embudo','etapa','canal_adquisicion','fuente','responsable','presupuesto','ciclo','total_facturado','tags'];
+    const cell=(r,c)=>{
+      let v=c==='total_facturado'?((S.totalFacturado&&S.totalFacturado[r.lead_id])||0):r[c];
+      return `"${(v??'').toString().replace(/"/g,'""')}"`;
+    };
+    const csv=[cols.join(','),...data.map(r=>cols.map(c=>cell(r,c)).join(','))].join('\n');
+    const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download=`oasis_crm_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  });
+
+  // Reset filtros
+  $('btn-reset-f').addEventListener('click',clearAll);
+
+  // Búsqueda
+  let st;$('tbl-q').addEventListener('input',e=>{clearTimeout(st);st=setTimeout(()=>{S.tbl.q=e.target.value;S.tbl.page=0;renderTable();},300);});
+
+  // Page size
+  $('pg-size').addEventListener('change',e=>{S.tbl.ps=+e.target.value;S.tbl.page=0;renderTable();});
+
+  // Paginación
+  $('pg-prev').addEventListener('click',()=>{if(S.tbl.page>0){S.tbl.page--;renderTable();}});
+  $('pg-next').addEventListener('click',()=>{S.tbl.page++;renderTable();});
+
+  // Sorting tabla
+  document.querySelectorAll('thead th[data-c]').forEach(th=>th.addEventListener('click',()=>{const c=th.dataset.c;if(S.tbl.sort.col===c)S.tbl.sort.asc=!S.tbl.sort.asc;else{S.tbl.sort.col=c;S.tbl.sort.asc=false;}S.tbl.page=0;renderTable();}));
+
+  // Toggle modo mapa (Leads / Revenue)
+  $('map-mode-leads').addEventListener('click',()=>{
+    S.mapMode='leads';
+    $('map-mode-leads').classList.add('on');$('map-mode-rev').classList.remove('on');
+    renderMapa(filtered());
+  });
+  $('map-mode-rev').addEventListener('click',()=>{
+    S.mapMode='rev';
+    $('map-mode-rev').classList.add('on');$('map-mode-leads').classList.remove('on');
+    renderMapa(filtered());
+  });
+
+  // Rango de fechas
+  $('btn-apply-range').addEventListener('click',()=>{
+    const from=$('d-from').value,to=$('d-to').value;
+    if(!from||!to){alert('Selecciona fecha inicio y fin');return;}
+    S.F.from=from;S.F.to=to;S.F.period='rango';
+    renderBadges();renderAll();
+  });
+
+  // Mostrar/ocultar rango
+  document.querySelectorAll('#period-pills .pill').forEach(btn=>btn.addEventListener('click',()=>{
+    const isRango=btn.dataset.p==='rango';
+    $('date-range').classList.toggle('show',isRango);
+    if(!isRango){S.F.from=null;S.F.to=null;}
+  },{capture:true}));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+async function startApp(){
+  $('loader').style.display='flex';
+  $('app').style.display='none';
+  try{
+    S.all=await loadAll();
+    // Pre-computar set de leads que pasaron por difusión (para canal DIFUSION en tabla y gráficos)
+    S.difusionIds=new Set(S.all.filter(r=>r.etapa==='difusion').map(r=>r.lead_id));
+    // C17 — Canal histórico por lead: primer registro (más antiguo) con tag de canal.
+    // Recupera canal de leads que perdieron el tag al avanzar de etapa. Solo para Top Canales.
+    // C3 — Total facturado por lead: suma de todas las orden_recibida (todos los ciclos).
+    S.canalMap={};
+    S.totalFacturado={};
+    for(let i=S.all.length-1;i>=0;i--){ // S.all viene DESC, recorrer al revés = más antiguo primero
+      const r=S.all[i];
+      if(!S.canalMap[r.lead_id]){
+        const t=(r.tags||'').toUpperCase();
+        if(t.includes('INSTAGRAM'))S.canalMap[r.lead_id]='INSTAGRAM';
+        else if(t.includes('TIKTOK'))S.canalMap[r.lead_id]='TIKTOK';
+        else if(t.includes('WEBSITE'))S.canalMap[r.lead_id]='WEBSITE';
+      }
+      if(r.etapa==='orden_recibida'&&+r.presupuesto>0){
+        S.totalFacturado[r.lead_id]=(S.totalFacturado[r.lead_id]||0)+(+r.presupuesto);
+      }
+    }
+    ldp(`✓ ${S.all.length} registros cargados`);
+    await new Promise(r=>setTimeout(r,300));
+    $('loader').style.display='none';
+    $('app').style.display='block';
+    buildSelectors();
+    renderAll();
+    setupEvents();
+  }catch(err){
+    ldp(`Error: ${err.message}`);
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>
